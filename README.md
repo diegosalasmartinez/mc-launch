@@ -17,7 +17,7 @@ for you, so there's nothing to install first.
 ## Download
 
 1. Grab the latest installer from the [**Releases**](../../releases) page
-   (`MC Launch Setup x.y.z.msi` on Windows).
+   (`MC-Launch-<version>.msi` on Windows).
 2. Run it and follow the installer.
 3. Open **MC Launch**, pick a version and a name, hit **Play**. It downloads
    everything it needs — the game *and* Java — and starts Minecraft.
