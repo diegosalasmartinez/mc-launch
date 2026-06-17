@@ -4,6 +4,10 @@
   "private": true,
   "description": "A vanilla Minecraft launcher that downloads the game and Java for you and gets you playing.",
   "author": "Diego",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diegosalasmartinez/mc-launch.git"
+  },
   "type": "module",
   "main": "./out/main/index.cjs",
   "engines": {
@@ -19,7 +23,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
   },
   "build": {
-    "appId": "tv.haystack.mclaunch",
+    "appId": "io.github.diegosalasmartinez.mclaunch",
     "productName": "MC Launch",
     "artifactName": "MC-Launch-${version}.${ext}",
     "directories": {

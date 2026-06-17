@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  Menu,
   shell,
   type IpcMainInvokeEvent,
 } from "electron";
@@ -121,6 +122,7 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null); // drop the default File/Edit/View menu bar
   registerIpc();
   createWindow();
 
