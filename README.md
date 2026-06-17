@@ -1,46 +1,35 @@
-# mc-launch
+<div align="center">
+
+# MC Launch
 
 A small Minecraft launcher that just gets you into the game. Pick a version, type
-a name, hit Play. It downloads the game files and the right version of Java for
-you, so there's nothing to install first.
+a name, hit **Play** — it downloads the game files and the right version of Java
+for you, so there's nothing to install first.
 
-I built it from scratch to understand how launchers actually work, so it talks
-straight to Mojang's servers the same way the official launcher does — no
-third-party server in the middle.
+![MC Launch](docs/screenshot.png)
 
-Right now it runs in **offline mode**: you can play singleplayer under any name.
-Joining official online servers or Realms needs a Microsoft login, which isn't
-wired up yet (the code has a clean seam for it).
+![version](https://img.shields.io/badge/version-0.1.0-5fa83c)
+![license](https://img.shields.io/badge/license-MIT-blue)
+![platforms](https://img.shields.io/badge/platforms-Windows%20·%20macOS%20·%20Linux-lightgrey)
 
-## Running it
+</div>
 
-```
-npm install
-npm run dev
-```
+## Download
 
-To build an installer for your machine:
+1. Grab the latest installer from the [**Releases**](../../releases) page
+   (`MC Launch Setup x.y.z.msi` on Windows).
+2. Run it and follow the installer.
+3. Open **MC Launch**, pick a version and a name, hit **Play**. It downloads
+   everything it needs — the game *and* Java — and starts Minecraft.
 
-```
-npm run dist
-```
+That's it. No Java, no setup, nothing else to install first.
 
-The result lands in `release/` — an `.msi` installer on Windows, a `.dmg` on
-macOS, an AppImage on Linux. Each one has to be built on its own OS.
+> The installer isn't code-signed yet, so Windows SmartScreen may show a
+> "unknown publisher" warning — click **More info → Run anyway**.
 
-On Windows that first build can fail while unpacking `winCodeSign` with
-*"A required privilege is not held by the client"*. electron-builder is
-extracting a tool that contains macOS symlinks, and Windows won't create
-symlinks without permission. Turn on **Developer Mode** (Settings → Privacy &
-security → For developers) or run the terminal as administrator, then it builds
-fine.
-
-There's also a CLI if you'd rather skip the window:
-
-```
-npm run launch -- --version 1.21.1 --username Steve
-npm run launch -- --prepare-only   # download + verify, don't launch
-```
+It runs in **offline mode**: you can play singleplayer under any name. Joining
+official online servers or Realms needs a Microsoft login, which isn't wired up
+yet (the code has a clean seam for it).
 
 ## How it works
 
@@ -50,15 +39,38 @@ read the chosen version's metadata, download the client jar + libraries + assets
 present, then build the `java …` command and spawn it. Files go into the usual
 `.minecraft` folder so they're shared with the official launcher.
 
-The auto-Java part is the bit the reference projects leave to you: the launcher
-reads which Java version the game needs, pulls the matching runtime from Mojang,
-and points the launch at that — so the player never installs Java.
+The auto-Java part is the interesting bit: the launcher reads which Java version
+the game needs, pulls the matching runtime straight from Mojang, and points the
+launch at that — so the player never installs Java themselves.
 
 It's an Electron app. The main process is the "backend" — it owns all the
 downloads, file I/O, and process launching. The React UI is a separate renderer
 that can't touch the filesystem; it only calls the few methods exposed on
-`window.mcl` over IPC. Keeping that boundary tight from the start meant the UI
-never needed Node access.
+`window.mcl` over IPC.
+
+## Build from source
+
+```
+npm install
+npm run dev          # run it with hot reload
+npm run dist         # build an installer into release/
+```
+
+`npm run dist` produces an `.msi` on Windows, a `.dmg` on macOS, and an AppImage
+on Linux — each has to be built on its own OS.
+
+> On Windows the first `npm run dist` can fail while unpacking `winCodeSign`
+> with *"A required privilege is not held by the client"* — that's it trying to
+> create macOS symlinks, which Windows won't do without permission. Turn on
+> **Developer Mode** (Settings → Privacy & security → For developers) or run the
+> terminal as administrator, then it builds fine.
+
+There's also a CLI if you'd rather skip the window:
+
+```
+npm run launch -- --version 1.21.1 --username Steve
+npm run launch -- --prepare-only   # download + verify, don't launch
+```
 
 ## Where the code lives
 
