@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Lock the renderer down: no remote content, no inline eval. -->
+    <!--
+      Scripts stay locked to 'self' (no inline/remote scripts), so even injected
+      release-notes HTML can't execute JS. We allow images from Mojang's launcher
+      content CDN so the notes' pictures load.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://launchercontent.mojang.com;"
+    />
+    <title>MC Launch</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>

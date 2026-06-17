@@ -1,0 +1,466 @@
+/* Minecraft-themed pixel UI. */
+
+:root {
+  --dirt-dark: #1f1710;
+  --dirt: #2c2016;
+  --stone: #6b6b6b;
+  --stone-light: #8a8a8a;
+  --stone-dark: #3a3a3a;
+  --grass: #5fa83c;
+  --grass-light: #7ec850;
+  --grass-dark: #3c7a26;
+  --gold: #ffaa00;
+  --text: #e9e4d6;
+  --muted: #a59c86;
+  --danger: #e0533d;
+  --pixel:
+    "Cascadia Mono", "Consolas", ui-monospace, "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--pixel);
+  background: var(--dirt-dark);
+  color: var(--text);
+  user-select: none;
+  -webkit-font-smoothing: none;
+  overflow: hidden; /* the window never scrolls; inner panels do */
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--dirt);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.18) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18) 2px, transparent 2px);
+  background-size: 32px 32px;
+}
+
+/* ---- First-run welcome overlay ------------------------------------------- */
+
+.welcome-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--dirt);
+  border: 3px solid #000;
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.06),
+    0 8px 0 rgba(0, 0, 0, 0.4);
+  padding: 26px 28px;
+}
+
+.welcome-title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  letter-spacing: 4px;
+  color: #f4f4f4;
+  text-shadow:
+    2px 2px 0 #2b2b2b,
+    4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+.welcome-lede {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.welcome-steps {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.welcome-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.welcome-num {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grass);
+  border: 2px solid #000;
+  box-shadow:
+    inset 2px 2px 0 var(--grass-light),
+    inset -2px -2px 0 var(--grass-dark);
+  color: #05130c;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.welcome-steps strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.welcome-steps p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.welcome-go {
+  width: 100%;
+}
+
+/* ---- Bottom controls bar ------------------------------------------------- */
+
+.panel {
+  position: relative; /* anchor for the floating progress line */
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  background: var(--dirt-dark);
+  border-top: 3px solid #000;
+}
+
+/*
+ * Progress as a thin line pinned to the top edge of the controls bar. It's
+ * absolutely positioned, so it never takes layout space — showing/hiding it
+ * can't resize or shift anything.
+ */
+.progress-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: var(--grass);
+  box-shadow: 0 0 6px rgba(126, 200, 80, 0.6);
+  transition: width 0.2s ease;
+  z-index: 2;
+}
+
+/* Full width: the Version+Username group sits left, Play is pushed right. */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+}
+
+.fields {
+  display: flex;
+  gap: 16px;
+}
+
+.field-version {
+  width: 190px;
+}
+
+.field-username {
+  width: 240px;
+}
+
+.field select,
+.field input {
+  width: 100%;
+}
+
+.info {
+  margin-left: 6px;
+  color: var(--gold);
+  cursor: help;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+select,
+input {
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--text);
+  background: #0f0d0a;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.06);
+  padding: 11px 12px;
+  outline: none;
+}
+
+select:focus,
+input:focus {
+  border-color: var(--grass);
+}
+
+input::placeholder {
+  color: #6b6457;
+}
+
+/* ---- Minecraft GUI button ------------------------------------------------ */
+
+.mc-btn {
+  font-family: var(--pixel);
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65);
+  background: var(--stone);
+  border: 2px solid #000;
+  box-shadow:
+    inset 2px 2px 0 var(--stone-light),
+    inset -2px -2px 0 var(--stone-dark);
+  padding: 13px 30px;
+  cursor: pointer;
+  transition: filter 0.1s ease;
+}
+
+.mc-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.mc-btn:active:not(:disabled) {
+  box-shadow:
+    inset -2px -2px 0 var(--stone-light),
+    inset 2px 2px 0 var(--stone-dark);
+}
+
+.mc-btn:disabled {
+  filter: grayscale(0.5) brightness(0.7);
+  cursor: default;
+}
+
+.play {
+  background: var(--grass);
+  box-shadow:
+    inset 2px 2px 0 var(--grass-light),
+    inset -2px -2px 0 var(--grass-dark);
+  min-width: 150px;
+}
+
+.play:active:not(:disabled) {
+  box-shadow:
+    inset -2px -2px 0 var(--grass-light),
+    inset 2px 2px 0 var(--grass-dark);
+}
+
+/* ---- Status + chunky progress bar ---------------------------------------- */
+
+.status {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.status-error .status-text {
+  color: var(--danger);
+}
+
+.status-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Game log console ---------------------------------------------------- */
+
+.logs {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 14px 16px;
+  overflow-y: auto;
+  background: #080705;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.04);
+  padding: 12px 14px;
+  font-family: var(--pixel);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #9aa18c;
+  user-select: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.logs::-webkit-scrollbar {
+  width: 12px;
+}
+.logs::-webkit-scrollbar-track {
+  background: #080705;
+}
+.logs::-webkit-scrollbar-thumb {
+  background: var(--stone-dark);
+  border: 2px solid #000;
+}
+
+/* ---- "What's new" release-notes panel (the main bounded, scrolling area) -- */
+
+.notes {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 14px 16px;
+  overflow-y: auto;
+  background: #14100b;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.04);
+  padding: 16px 18px;
+}
+
+.notes-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.notes-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.notes-title {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--text);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.notes-date {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Stacked by default (image on top, then body). */
+.notes-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notes-hero {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid #000;
+}
+
+/* Wide enough: two columns — text on the left, image on the right. */
+@media (min-width: 760px) {
+  .notes-main {
+    flex-direction: row-reverse;
+    align-items: flex-start;
+  }
+  .notes-hero {
+    flex: 0 0 auto;
+    width: 40%;
+    max-width: 340px;
+    position: sticky;
+    top: 0;
+  }
+  .notes-body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+/* The injected article HTML — keep it readable on the dark panel. */
+.notes-body {
+  color: #c9c3b2;
+  font-size: 14px;
+  line-height: 1.65;
+  user-select: text;
+}
+
+.notes-body :is(h1, h2, h3, h4) {
+  color: var(--text);
+  letter-spacing: 0.5px;
+  margin: 18px 0 8px;
+}
+
+.notes-body p {
+  margin: 0 0 12px;
+}
+
+.notes-body a {
+  color: var(--grass-light);
+  text-decoration: underline;
+}
+
+.notes-body img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #000;
+  margin: 8px 0;
+}
+
+.notes-body ul,
+.notes-body ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.notes-body li {
+  margin: 4px 0;
+}
+
+.notes-body code {
+  background: #0a0805;
+  border: 1px solid #000;
+  padding: 1px 5px;
+  font-family: var(--pixel);
+  font-size: 13px;
+}
+
+.notes::-webkit-scrollbar {
+  width: 12px;
+}
+.notes::-webkit-scrollbar-track {
+  background: #14100b;
+}
+.notes::-webkit-scrollbar-thumb {
+  background: var(--stone-dark);
+  border: 2px solid #000;
+}
