@@ -21,6 +21,7 @@
   "build": {
     "appId": "tv.haystack.mclaunch",
     "productName": "MC Launch",
+    "artifactName": "MC-Launch-${version}.${ext}",
     "directories": {
       "output": "release"
     },
