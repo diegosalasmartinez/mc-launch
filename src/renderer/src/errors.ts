@@ -32,6 +32,13 @@ export function toFriendlyError(err: unknown): FriendlyError {
     };
   }
 
+  if (/no fabric build|no build for|not available|incompatible/.test(msg)) {
+    return {
+      title: "That add-on isn’t available for this version.",
+      hint: "Try a different Minecraft version, or pick another one.",
+    };
+  }
+
   if (/no managed java|system java|spawn.*enoent|\bjava\b/.test(msg)) {
     return {
       title: "Couldn’t start Java.",

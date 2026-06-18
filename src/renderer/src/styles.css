@@ -140,6 +140,157 @@ body {
   width: 100%;
 }
 
+/* ---- Top tabs ------------------------------------------------------------ */
+
+.tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  padding: 14px 16px 0;
+}
+
+.tab {
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: #14100b;
+  border: 2px solid #000;
+  border-bottom: none;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab-active {
+  color: var(--text);
+  background: #14100b;
+  box-shadow: inset 0 2px 0 var(--grass);
+}
+
+/* Content panel sits flush under the tab bar — no blank gap between them.
+   Higher specificity than the `.notes`/`.logs` margin shorthand defined later. */
+.notes.notes-tabbed,
+.logs.notes-tabbed {
+  margin-top: 0;
+}
+
+/* ---- Recommended mods/shaders catalog ------------------------------------ */
+
+.catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-hint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.catalog-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #0f0d0a;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.04);
+  padding: 12px 14px;
+}
+
+.catalog-icon {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: 2px solid #000;
+  image-rendering: pixelated;
+  object-fit: cover;
+}
+
+.catalog-icon-empty {
+  background: var(--stone-dark);
+}
+
+.catalog-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.catalog-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.catalog-title {
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+
+.catalog-license {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--stone-dark);
+  padding: 1px 5px;
+  text-transform: uppercase;
+}
+
+.catalog-blurb {
+  margin: 4px 0 2px;
+  font-size: 12px;
+  color: var(--grass-light);
+}
+
+.catalog-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.catalog-link {
+  font-size: 11px;
+  color: var(--grass-light);
+  text-decoration: underline;
+}
+
+.catalog-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.catalog-action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.catalog-btn {
+  font-size: 13px;
+  padding: 9px 16px;
+  min-width: 120px;
+}
+
+.catalog-na {
+  max-width: 120px;
+  font-size: 11px;
+  text-align: right;
+  color: var(--muted);
+}
+
 /* ---- Bottom controls bar ------------------------------------------------- */
 
 .panel {

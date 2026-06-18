@@ -5,9 +5,11 @@ import type {
   VersionSummary,
 } from "../../shared/ipc.js";
 import { toFriendlyError } from "./errors.js";
+import { Catalog } from "./Catalog.js";
 
 type Phase = "idle" | "preparing" | "running" | "exited" | "error";
 type NotesState = "loading" | "ready" | "none" | "error";
+type Tab = "play" | "mods" | "shaders";
 
 // the csp already blocks scripts; this strips script/embed tags, on* handlers,
 // and javascript: urls from the remote notes html as defense in depth before injecting it.
@@ -49,6 +51,7 @@ export function App(): JSX.Element {
   const [notesState, setNotesState] = useState<NotesState>("none");
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
   const [fabric, setFabric] = useState<boolean>(false);
+  const [tab, setTab] = useState<Tab>("play");
 
   const autoPlayed = useRef(false);
 
@@ -263,12 +266,37 @@ export function App(): JSX.Element {
         </div>
       )}
 
-      {logs.length > 0 ? (
-        <pre className="logs" ref={logRef}>
+      <nav className="tabs">
+        <button
+          className={`tab${tab === "play" ? " tab-active" : ""}`}
+          onClick={() => setTab("play")}
+        >
+          What’s New
+        </button>
+        <button
+          className={`tab${tab === "mods" ? " tab-active" : ""}`}
+          onClick={() => setTab("mods")}
+        >
+          Mods
+        </button>
+        <button
+          className={`tab${tab === "shaders" ? " tab-active" : ""}`}
+          onClick={() => setTab("shaders")}
+        >
+          Shaders
+        </button>
+      </nav>
+
+      {tab !== "play" ? (
+        <section className="notes notes-tabbed">
+          <Catalog type={tab === "shaders" ? "shader" : "mod"} version={version} />
+        </section>
+      ) : logs.length > 0 ? (
+        <pre className="logs notes-tabbed" ref={logRef}>
           {logs.join("\n")}
         </pre>
       ) : (
-        <section className="notes">
+        <section className="notes notes-tabbed">
           {notesState === "loading" && (
             <p className="notes-meta">Loading release notes…</p>
           )}

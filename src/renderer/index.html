@@ -7,11 +7,11 @@
     <!--
       Scripts stay locked to 'self' (no inline/remote scripts), so even injected
       release-notes HTML can't execute JS. We allow images from Mojang's launcher
-      content CDN so the notes' pictures load.
+      content CDN (release-notes pictures) and Modrinth's CDN (mod/shader icons).
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://launchercontent.mojang.com;"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://launchercontent.mojang.com https://cdn.modrinth.com;"
     />
     <title>MC Launch</title>
   </head>
