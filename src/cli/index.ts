@@ -8,6 +8,7 @@ interface CliArgs {
   version: string;
   username: string;
   prepareOnly: boolean;
+  fabric: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -15,6 +16,7 @@ function parseArgs(argv: string[]): CliArgs {
     version: "latest",
     username: "Player",
     prepareOnly: false,
+    fabric: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -26,6 +28,9 @@ function parseArgs(argv: string[]): CliArgs {
       case "--username":
       case "-u":
         args.username = argv[++i] ?? args.username;
+        break;
+      case "--fabric":
+        args.fabric = true;
         break;
       case "--prepare-only":
         args.prepareOnly = true;
@@ -54,6 +59,7 @@ Options:
   -v, --version <id>     Version to launch (default: latest release).
                          Accepts "latest", "snapshot", or an explicit id like 1.21.1.
   -u, --username <name>  Offline username (default: Player).
+      --fabric           Install + launch with the Fabric mod loader.
       --prepare-only     Download + verify everything, but don't launch.
   -h, --help             Show this help.
 `);
@@ -64,42 +70,59 @@ async function main(): Promise<void> {
 
   let lastAssetLine = 0;
   let lastJavaLine = 0;
-  const prepared = await prepareVersion(args.version, {
-    onStep: (_phase, m) => console.log(`• ${m}`),
-    onAssetProgress: (done, total) => {
-      // throttle so we don't flood the terminal
-      if (done === total || done - lastAssetLine >= 50) {
-        lastAssetLine = done;
-        process.stdout.write(`\r  assets ${done} / ${total}`);
-        if (done === total) process.stdout.write("\n");
-      }
+  const prepared = await prepareVersion(
+    args.version,
+    {
+      onStep: (_phase, m) => console.log(`• ${m}`),
+      onAssetProgress: (done, total) => {
+        // throttle so we don't flood the terminal
+        if (done === total || done - lastAssetLine >= 50) {
+          lastAssetLine = done;
+          process.stdout.write(`\r  assets ${done} / ${total}`);
+          if (done === total) process.stdout.write("\n");
+        }
+      },
+      onJavaProgress: (done, total) => {
+        if (done === total || done - lastJavaLine >= 25) {
+          lastJavaLine = done;
+          process.stdout.write(`\r  java files ${done} / ${total}`);
+          if (done === total) process.stdout.write("\n");
+        }
+      },
     },
-    onJavaProgress: (done, total) => {
-      if (done === total || done - lastJavaLine >= 25) {
-        lastJavaLine = done;
-        process.stdout.write(`\r  java files ${done} / ${total}`);
-        if (done === total) process.stdout.write("\n");
-      }
-    },
-  });
+    { fabric: args.fabric },
+  );
 
   if (args.prepareOnly) {
     console.log("\n✓ Prepared. Re-run without --prepare-only to launch.");
     return;
   }
 
-  const { paths, version, resolved, javaBin, managedJava } = prepared;
+  const { paths, version, resolved, javaBin, managedJava, fabric } = prepared;
+  if (fabric) console.log(`• Fabric loader ${fabric.loaderVersion}`);
 
   const auth = await new OfflineAuthProvider(args.username).authenticate();
   console.log(`• Offline auth: ${auth.username} (${auth.uuid})`);
 
-  const classpath = buildClasspath(paths, version.id, resolved);
+  const classpath = buildClasspath(paths, version.id, [
+    ...resolved,
+    ...(fabric?.libs ?? []),
+  ]);
   const launchArgs = buildLaunchArgs({
     paths,
     version,
     auth,
     classpath,
     nativesDir: paths.nativesDir(version.id),
+    ...(fabric
+      ? {
+          fabric: {
+            mainClass: fabric.mainClass,
+            jvmArgs: fabric.jvmArgs,
+            gameArgs: fabric.gameArgs,
+          },
+        }
+      : {}),
   });
 
   console.log(

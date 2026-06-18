@@ -201,6 +201,42 @@ body {
   cursor: help;
 }
 
+.mods-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.toggle input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--grass);
+  cursor: pointer;
+}
+
+.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--grass-light);
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .field {
   display: flex;
   flex-direction: column;

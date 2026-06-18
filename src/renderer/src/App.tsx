@@ -48,6 +48,7 @@ export function App(): JSX.Element {
   const [notes, setNotes] = useState<ReleaseNotes | null>(null);
   const [notesState, setNotesState] = useState<NotesState>("none");
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
+  const [fabric, setFabric] = useState<boolean>(false);
 
   const autoPlayed = useRef(false);
 
@@ -65,6 +66,7 @@ export function App(): JSX.Element {
 
         const savedUser = params.get("u") || settings.username;
         if (savedUser) setUsername(savedUser);
+        setFabric(Boolean(settings.fabric));
 
         if (!settings.seenWelcome) setShowWelcome(true);
 
@@ -73,7 +75,7 @@ export function App(): JSX.Element {
           autoPlayed.current = true;
           const user = params.get("u") || settings.username || "Player";
           setUsername(user);
-          void startPlay(initial, user);
+          void startPlay(initial, user, Boolean(settings.fabric));
         }
 
         // test hooks: ?progress=N forces the progress line, ?error=<text> a friendly error
@@ -171,15 +173,27 @@ export function App(): JSX.Element {
     [progress],
   );
 
-  async function startPlay(ver: string, user: string): Promise<void> {
+  async function startPlay(
+    ver: string,
+    user: string,
+    useFabric: boolean,
+  ): Promise<void> {
     if (!ver || !user.trim()) return;
-    void window.mcl.saveSettings({ version: ver, username: user.trim() });
+    void window.mcl.saveSettings({
+      version: ver,
+      username: user.trim(),
+      fabric: useFabric,
+    });
     setPhase("preparing");
     setLogs([]);
     setErrorHint("");
     setStatus("Getting things ready…");
     try {
-      await window.mcl.play({ version: ver, username: user.trim() });
+      await window.mcl.play({
+        version: ver,
+        username: user.trim(),
+        fabric: useFabric,
+      });
     } catch (err: unknown) {
       const fe = toFriendlyError(err);
       setPhase("error");
@@ -189,7 +203,7 @@ export function App(): JSX.Element {
   }
 
   function onPlay(): void {
-    void startPlay(version, username);
+    void startPlay(version, username, fabric);
   }
 
   function dismissWelcome(): void {
@@ -197,6 +211,7 @@ export function App(): JSX.Element {
     void window.mcl.saveSettings({
       version,
       username: username.trim(),
+      fabric,
       seenWelcome: true,
     });
   }
@@ -342,6 +357,27 @@ export function App(): JSX.Element {
           >
             {playLabel}
           </button>
+        </div>
+
+        <div className="mods-row">
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={fabric}
+              disabled={busy}
+              onChange={(e) => setFabric(e.target.checked)}
+            />
+            <span>Fabric mods</span>
+          </label>
+          {fabric && (
+            <button
+              type="button"
+              className="linkish"
+              onClick={() => void window.mcl.openModsFolder()}
+            >
+              Open mods folder
+            </button>
+          )}
         </div>
 
         <div className={`status${phase === "error" ? " status-error" : ""}`}>

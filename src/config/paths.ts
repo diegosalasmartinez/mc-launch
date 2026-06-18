@@ -27,6 +27,10 @@ export class GamePaths {
     return path.join(this.root, "assets");
   }
 
+  get modsDir(): string {
+    return path.join(this.root, "mods");
+  }
+
   get assetIndexesDir(): string {
     return path.join(this.assetsDir, "indexes");
   }

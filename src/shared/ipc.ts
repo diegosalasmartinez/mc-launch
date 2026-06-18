@@ -7,11 +7,14 @@ export interface VersionSummary {
 export interface PlayOptions {
   version: string;
   username: string;
+  /** launch with the Fabric mod loader */
+  fabric?: boolean;
 }
 
 export interface Settings {
   username?: string;
   version?: string;
+  fabric?: boolean;
   /** set once the first-run welcome is dismissed */
   seenWelcome?: boolean;
 }
@@ -42,6 +45,7 @@ export const IPC = {
   getReleaseNotes: "launcher:getReleaseNotes",
   getSettings: "launcher:getSettings",
   saveSettings: "launcher:saveSettings",
+  openModsFolder: "launcher:openModsFolder",
   play: "launcher:play",
   progress: "launcher:progress",
 } as const;
@@ -51,6 +55,7 @@ export interface LauncherApi {
   getReleaseNotes(version: string): Promise<ReleaseNotes | null>;
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
+  openModsFolder(): Promise<void>;
   play(opts: PlayOptions): Promise<PlayResult>;
   /** returns an unsubscribe function */
   onProgress(cb: (event: ProgressEvent) => void): () => void;

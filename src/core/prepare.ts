@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { GamePaths } from "../config/paths.js";
 import { fetchManifest, resolveVersion } from "./manifest.js";
 import { fetchVersionJson, fetchAssetIndex } from "./version.js";
@@ -7,6 +8,7 @@ import type { ResolvedArtifact } from "./libraries.js";
 import { downloadAssets } from "./assets.js";
 import { extractNatives } from "./natives.js";
 import { ensureJavaRuntime } from "./javaRuntime.js";
+import { prepareFabric, type FabricResolved } from "./fabric.js";
 import { findSystemJava, validateJava } from "../launch/java.js";
 import type { VersionJson } from "../types/version.js";
 
@@ -17,6 +19,14 @@ export interface PreparedVersion {
   javaBin: string;
   /** true when javaBin is a managed jre rather than system java */
   managedJava: boolean;
+  /** present when launching with the Fabric mod loader */
+  fabric?: FabricResolved;
+}
+
+export interface PrepareOptions {
+  /** install + launch with Fabric (latest stable loader unless fabricLoader is set) */
+  fabric?: boolean;
+  fabricLoader?: string;
 }
 
 // frontends map these to their own copy (cli prints the technical message, gui shows friendly text)
@@ -28,6 +38,7 @@ export type PreparePhase =
   | "libraries"
   | "natives"
   | "assets"
+  | "fabric"
   | "java"
   | "done";
 
@@ -41,6 +52,7 @@ export interface PrepareHooks {
 export async function prepareVersion(
   versionId: string,
   hooks: PrepareHooks = {},
+  opts: PrepareOptions = {},
 ): Promise<PreparedVersion> {
   const { onStep, onAssetProgress } = hooks;
   const paths = new GamePaths();
@@ -68,10 +80,24 @@ export async function prepareVersion(
   onStep?.("assets", "Downloading assets…");
   await downloadAssets(paths, assetIndex, onAssetProgress);
 
+  let fabric: FabricResolved | undefined;
+  if (opts.fabric) {
+    onStep?.("fabric", "Setting up Fabric…");
+    fabric = await prepareFabric(paths, version.id, opts.fabricLoader);
+    await mkdir(paths.modsDir, { recursive: true });
+  }
+
   const { javaBin, managedJava } = await resolveJava(paths, version, hooks);
 
   onStep?.("done", "Preparation complete.");
-  return { paths, version, resolved, javaBin, managedJava };
+  return {
+    paths,
+    version,
+    resolved,
+    javaBin,
+    managedJava,
+    ...(fabric ? { fabric } : {}),
+  };
 }
 
 // prefer the managed jre; fall back to validated system java only when mojang

@@ -24,6 +24,7 @@ const PHASE_COPY: Record<PreparePhase, string> = {
   libraries: "Downloading game files…",
   natives: "Downloading game files…",
   assets: "Downloading game files…",
+  fabric: "Setting up Fabric…",
   java: "Setting up Java…",
   done: "Almost there…",
 };
@@ -45,25 +46,38 @@ export async function play(
   await checkNetwork();
   await checkDiskSpace(homedir());
 
-  const prepared = await prepareVersion(opts.version, {
-    onStep: (phase) => emit({ kind: "step", message: PHASE_COPY[phase] }),
-    onAssetProgress: (done, total) => emit({ kind: "assets", done, total }),
-    onJavaProgress: (done, total) => emit({ kind: "java", done, total }),
-  });
+  const prepared = await prepareVersion(
+    opts.version,
+    {
+      onStep: (phase) => emit({ kind: "step", message: PHASE_COPY[phase] }),
+      onAssetProgress: (done, total) => emit({ kind: "assets", done, total }),
+      onJavaProgress: (done, total) => emit({ kind: "java", done, total }),
+    },
+    { fabric: opts.fabric ?? false },
+  );
 
   const auth = await new OfflineAuthProvider(opts.username).authenticate();
 
-  const classpath = buildClasspath(
-    prepared.paths,
-    prepared.version.id,
-    prepared.resolved,
-  );
+  const { fabric } = prepared;
+  const classpath = buildClasspath(prepared.paths, prepared.version.id, [
+    ...prepared.resolved,
+    ...(fabric?.libs ?? []),
+  ]);
   const launchArgs = buildLaunchArgs({
     paths: prepared.paths,
     version: prepared.version,
     auth,
     classpath,
     nativesDir: prepared.paths.nativesDir(prepared.version.id),
+    ...(fabric
+      ? {
+          fabric: {
+            mainClass: fabric.mainClass,
+            jvmArgs: fabric.jvmArgs,
+            gameArgs: fabric.gameArgs,
+          },
+        }
+      : {}),
   });
 
   emit({ kind: "launched", message: "Starting Minecraft…" });

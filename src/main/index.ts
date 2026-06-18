@@ -7,7 +7,8 @@ import {
   type IpcMainInvokeEvent,
 } from "electron";
 import { join } from "node:path";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import { GamePaths } from "../config/paths.js";
 import { IPC, type PlayOptions, type Settings } from "../shared/ipc.js";
 import { getReleaseNotes, listVersions, play } from "./launcherService.js";
 import { loadSettings, saveSettings } from "./settings.js";
@@ -107,6 +108,12 @@ function registerIpc(): void {
   ipcMain.handle(IPC.saveSettings, (_event, settings: Settings) =>
     saveSettings(settings),
   );
+
+  ipcMain.handle(IPC.openModsFolder, async () => {
+    const dir = new GamePaths().modsDir;
+    await mkdir(dir, { recursive: true });
+    await shell.openPath(dir);
+  });
 
   ipcMain.handle(
     IPC.play,

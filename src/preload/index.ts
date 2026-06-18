@@ -15,6 +15,7 @@ const api: LauncherApi = {
   getSettings: () => ipcRenderer.invoke(IPC.getSettings),
   saveSettings: (settings: Settings) =>
     ipcRenderer.invoke(IPC.saveSettings, settings),
+  openModsFolder: () => ipcRenderer.invoke(IPC.openModsFolder),
   play: (opts: PlayOptions) => ipcRenderer.invoke(IPC.play, opts),
   onProgress: (cb: (event: ProgressEvent) => void) => {
     const listener = (_e: IpcRendererEvent, data: ProgressEvent) => cb(data);

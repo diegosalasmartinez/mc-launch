@@ -13,10 +13,12 @@ export interface LaunchInputs {
   auth: AuthResult;
   classpath: string;
   nativesDir: string;
+  // mod loader (Fabric): overrides mainClass and adds its own args
+  fabric?: { mainClass: string; jvmArgs: string[]; gameArgs: string[] };
 }
 
 export function buildLaunchArgs(inputs: LaunchInputs): string[] {
-  const { version } = inputs;
+  const { version, fabric } = inputs;
   const placeholders = buildPlaceholders(inputs);
 
   let jvmArgs: string[];
@@ -34,7 +36,12 @@ export function buildLaunchArgs(inputs: LaunchInputs): string[] {
     );
   }
 
-  return [...jvmArgs, version.mainClass, ...gameArgs];
+  if (fabric) {
+    jvmArgs = [...jvmArgs, ...substituteAll(fabric.jvmArgs, placeholders)];
+    gameArgs = [...gameArgs, ...substituteAll(fabric.gameArgs, placeholders)];
+  }
+
+  return [...jvmArgs, fabric?.mainClass ?? version.mainClass, ...gameArgs];
 }
 
 function buildPlaceholders(inputs: LaunchInputs): Record<string, string> {
