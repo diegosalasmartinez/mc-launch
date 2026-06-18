@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import {
   IPC,
+  type ContentType,
   type LauncherApi,
   type PlayOptions,
   type ProgressEvent,
@@ -16,6 +17,12 @@ const api: LauncherApi = {
   saveSettings: (settings: Settings) =>
     ipcRenderer.invoke(IPC.saveSettings, settings),
   openModsFolder: () => ipcRenderer.invoke(IPC.openModsFolder),
+  listRecommendedMods: (version: string) =>
+    ipcRenderer.invoke(IPC.listRecommendedMods, version),
+  listRecommendedShaders: (version: string) =>
+    ipcRenderer.invoke(IPC.listRecommendedShaders, version),
+  installContent: (type: ContentType, slug: string, version: string) =>
+    ipcRenderer.invoke(IPC.installContent, type, slug, version),
   play: (opts: PlayOptions) => ipcRenderer.invoke(IPC.play, opts),
   onProgress: (cb: (event: ProgressEvent) => void) => {
     const listener = (_e: IpcRendererEvent, data: ProgressEvent) => cb(data);

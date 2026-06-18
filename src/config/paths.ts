@@ -31,6 +31,10 @@ export class GamePaths {
     return path.join(this.root, "mods");
   }
 
+  get shaderpacksDir(): string {
+    return path.join(this.root, "shaderpacks");
+  }
+
   get assetIndexesDir(): string {
     return path.join(this.assetsDir, "indexes");
   }

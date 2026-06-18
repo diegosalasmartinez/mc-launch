@@ -23,6 +23,30 @@ export interface PlayResult {
   exitCode: number;
 }
 
+export type ContentType = "mod" | "shader";
+
+/** a curated mod/shader, enriched with live metadata from Modrinth */
+export interface RecommendedItem {
+  slug: string;
+  type: ContentType;
+  /** editorial one-liner on why it's recommended */
+  blurb: string;
+  title: string;
+  description: string;
+  iconUrl: string | null;
+  pageUrl: string;
+  license: string | null;
+  /** a build exists for the requested Minecraft version */
+  compatible: boolean;
+  /** its files are already present on disk */
+  installed: boolean;
+}
+
+export interface InstallResult {
+  /** filenames written or skipped, for a friendly summary */
+  files: string[];
+}
+
 export interface ReleaseNotes {
   version: string;
   title: string;
@@ -46,6 +70,9 @@ export const IPC = {
   getSettings: "launcher:getSettings",
   saveSettings: "launcher:saveSettings",
   openModsFolder: "launcher:openModsFolder",
+  listRecommendedMods: "launcher:listRecommendedMods",
+  listRecommendedShaders: "launcher:listRecommendedShaders",
+  installContent: "launcher:installContent",
   play: "launcher:play",
   progress: "launcher:progress",
 } as const;
@@ -56,6 +83,13 @@ export interface LauncherApi {
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
   openModsFolder(): Promise<void>;
+  listRecommendedMods(version: string): Promise<RecommendedItem[]>;
+  listRecommendedShaders(version: string): Promise<RecommendedItem[]>;
+  installContent(
+    type: ContentType,
+    slug: string,
+    version: string,
+  ): Promise<InstallResult>;
   play(opts: PlayOptions): Promise<PlayResult>;
   /** returns an unsubscribe function */
   onProgress(cb: (event: ProgressEvent) => void): () => void;

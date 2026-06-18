@@ -9,8 +9,20 @@ import {
 import { join } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { GamePaths } from "../config/paths.js";
-import { IPC, type PlayOptions, type Settings } from "../shared/ipc.js";
-import { getReleaseNotes, listVersions, play } from "./launcherService.js";
+import {
+  IPC,
+  type ContentType,
+  type PlayOptions,
+  type Settings,
+} from "../shared/ipc.js";
+import {
+  getReleaseNotes,
+  installContent,
+  listRecommendedMods,
+  listRecommendedShaders,
+  listVersions,
+  play,
+} from "./launcherService.js";
 import { loadSettings, saveSettings } from "./settings.js";
 
 // keep dev and packaged on the same userData dir (else dev="mc-launch", packaged="MC Launch")
@@ -114,6 +126,20 @@ function registerIpc(): void {
     await mkdir(dir, { recursive: true });
     await shell.openPath(dir);
   });
+
+  ipcMain.handle(IPC.listRecommendedMods, (_event, version: string) =>
+    listRecommendedMods(version),
+  );
+  ipcMain.handle(IPC.listRecommendedShaders, (_event, version: string) =>
+    listRecommendedShaders(version),
+  );
+  ipcMain.handle(
+    IPC.installContent,
+    (_event, type: ContentType, slug: string, version: string) => {
+      console.log(`[main] install ${type} ${slug} for ${version}`);
+      return installContent(type, slug, version);
+    },
+  );
 
   ipcMain.handle(
     IPC.play,

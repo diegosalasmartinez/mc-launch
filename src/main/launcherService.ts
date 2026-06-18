@@ -7,14 +7,34 @@ import { OfflineAuthProvider } from "../auth/OfflineAuthProvider.js";
 import { buildClasspath } from "../launch/classpath.js";
 import { buildLaunchArgs } from "../launch/command.js";
 import { spawnGame } from "../launch/spawn.js";
+import { GamePaths } from "../config/paths.js";
+import { mapLimit } from "../net/pool.js";
+import { getCompatibleVersion, getProject } from "../core/modrinth.js";
+import {
+  FABRIC_LOADER,
+  SHADER_LOADER,
+  installMod,
+  installShader,
+  isInstalled,
+} from "../core/mods.js";
+import {
+  RECOMMENDED_MODS,
+  RECOMMENDED_SHADERS,
+  type RecommendedEntry,
+} from "../core/recommended.js";
 import type {
+  ContentType,
+  InstallResult,
   PlayOptions,
   PlayResult,
   ProgressEvent,
+  RecommendedItem,
   VersionSummary,
 } from "../shared/ipc.js";
 
 export type ProgressSink = (event: ProgressEvent) => void;
+
+const DESCRIBE_CONCURRENCY = 6;
 
 const PHASE_COPY: Record<PreparePhase, string> = {
   manifest: "Getting things ready…",
@@ -37,6 +57,69 @@ export async function listVersions(): Promise<VersionSummary[]> {
 }
 
 export { getReleaseNotes };
+
+// enrich each curated entry with live Modrinth metadata + on-disk install state.
+// entries that fail to load (bad slug, network hiccup) are dropped rather than failing the list.
+async function describeRecommended(
+  entries: RecommendedEntry[],
+  type: ContentType,
+  mcVersion: string,
+): Promise<RecommendedItem[]> {
+  const loader = type === "shader" ? SHADER_LOADER : FABRIC_LOADER;
+  const dir = type === "shader"
+    ? new GamePaths().shaderpacksDir
+    : new GamePaths().modsDir;
+
+  const items = await mapLimit(entries, DESCRIBE_CONCURRENCY, async (entry) => {
+    try {
+      const [project, version] = await Promise.all([
+        getProject(entry.slug),
+        getCompatibleVersion(entry.slug, mcVersion, loader),
+      ]);
+      const item: RecommendedItem = {
+        slug: entry.slug,
+        type,
+        blurb: entry.blurb,
+        title: project.title,
+        description: project.description,
+        iconUrl: project.icon_url,
+        pageUrl: `https://modrinth.com/${type}/${entry.slug}`,
+        license: project.license?.id ?? null,
+        compatible: version !== null,
+        installed: version ? await isInstalled(version, dir) : false,
+      };
+      return item;
+    } catch {
+      return null;
+    }
+  });
+  return items.filter((i): i is RecommendedItem => i !== null);
+}
+
+export function listRecommendedMods(
+  version: string,
+): Promise<RecommendedItem[]> {
+  return describeRecommended(RECOMMENDED_MODS, "mod", version);
+}
+
+export function listRecommendedShaders(
+  version: string,
+): Promise<RecommendedItem[]> {
+  return describeRecommended(RECOMMENDED_SHADERS, "shader", version);
+}
+
+export async function installContent(
+  type: ContentType,
+  slug: string,
+  version: string,
+): Promise<InstallResult> {
+  const paths = new GamePaths();
+  const files =
+    type === "shader"
+      ? await installShader(paths, version, slug)
+      : await installMod(paths, version, slug);
+  return { files };
+}
 
 export async function play(
   opts: PlayOptions,
