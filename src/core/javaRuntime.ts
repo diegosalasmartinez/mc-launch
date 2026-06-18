@@ -170,17 +170,22 @@ async function installEntry(
 }
 
 async function locateJavaBin(targetDir: string): Promise<string | null> {
-  const candidate = path.join(
-    targetDir,
-    "bin",
-    isWindows() ? "java.exe" : "java",
-  );
-  try {
-    await access(candidate);
-    return candidate;
-  } catch {
-    return null;
+  const exe = isWindows() ? "java.exe" : "java";
+  // Windows/Linux runtimes put the binary at bin/java; macOS nests the whole JRE
+  // inside a .bundle (jre.bundle/Contents/Home/bin/java).
+  const candidates = [
+    path.join(targetDir, "bin", exe),
+    path.join(targetDir, "jre.bundle", "Contents", "Home", "bin", exe),
+  ];
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // try the next layout
+    }
   }
+  return null;
 }
 
 interface RuntimeMarker {
