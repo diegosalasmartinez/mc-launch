@@ -3,7 +3,6 @@ import { createReadStream } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getBuffer } from "./http.js";
-import { BADHINTS } from "node:dns";
 
 export async function sha1OfFile(filePath: string): Promise<string | null> {
   try {
