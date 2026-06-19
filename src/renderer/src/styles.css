@@ -299,7 +299,8 @@ body {
 }
 
 /* RETRY (after a failed install) = amber, clearly not the normal action */
-.catalog-btn-retry {
+.catalog-btn-retry,
+.catalog-btn-update {
   background: var(--gold);
   color: #1a1206;
   text-shadow: none;
@@ -348,12 +349,63 @@ body {
   border-top: 2px solid #000;
 }
 
+.installed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .installed-title {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 13px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--text);
+}
+
+.installed-update-all {
+  flex: 0 0 auto;
+  background: none;
+  border: 2px solid var(--gold);
+  padding: 5px 10px;
+  font-family: var(--pixel);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.installed-update-all:hover {
+  background: rgba(255, 170, 0, 0.12);
+}
+
+.installed-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.installed-update {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.installed-update:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.installed-update:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 
 .installed-list {

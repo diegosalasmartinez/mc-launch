@@ -1,13 +1,18 @@
 import { useEffect, useState } from "react";
-import type { ContentType, RecommendedItem } from "../../shared/ipc.js";
+import type {
+  ContentType,
+  ContentUpdate,
+  RecommendedItem,
+} from "../../shared/ipc.js";
 import { toFriendlyError } from "./errors.js";
 
 type ListState = "loading" | "ready" | "error";
 type ItemState = "installing" | "error";
 
-// Session cache for the curated list (Modrinth lookups). The installed-files list
-// is read fresh from disk — it's local and cheap, and must stay accurate.
+// Session caches. The curated list and update check both hit Modrinth, so we
+// cache them; the installed-files list is a cheap local read, always fresh.
 const listCache = new Map<string, RecommendedItem[]>();
+const updatesCache = new Map<string, ContentUpdate[]>();
 const cacheKey = (type: ContentType, version: string): string =>
   `${type}:${version}`;
 
@@ -23,22 +28,32 @@ export function Catalog({
 }: {
   type: ContentType;
   version: string;
-  /** called after any successful install (mods load through Fabric) */
+  /** called after a successful install/update (mods load through Fabric) */
   onInstalled?: () => void;
 }): JSX.Element {
   const [items, setItems] = useState<RecommendedItem[]>([]);
   const [listState, setListState] = useState<ListState>("loading");
   // the on-disk truth: filenames present in this version's folder
   const [installedFiles, setInstalledFiles] = useState<string[]>([]);
+  const [updates, setUpdates] = useState<ContentUpdate[]>([]);
   const [busy, setBusy] = useState<Record<string, ItemState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [removing, setRemoving] = useState<Record<string, boolean>>({});
+  const [updating, setUpdating] = useState<Record<string, boolean>>({});
 
-  async function refreshInstalled(): Promise<void> {
+  // re-read installed files + updates after any change to the folder
+  async function refreshState(): Promise<void> {
+    updatesCache.delete(cacheKey(type, version));
     try {
-      setInstalledFiles(await window.mcl.listInstalled(type, version));
+      const [files, ups] = await Promise.all([
+        window.mcl.listInstalled(type, version),
+        window.mcl.findUpdates(type, version),
+      ]);
+      setInstalledFiles(files);
+      updatesCache.set(cacheKey(type, version), ups);
+      setUpdates(ups);
     } catch {
-      // keep whatever we had; the list just won't update
+      // keep whatever we had
     }
   }
 
@@ -77,6 +92,22 @@ export function Catalog({
         if (!stale) setInstalledFiles([]);
       });
 
+    const cachedUpdates = updatesCache.get(cacheKey(type, version));
+    if (cachedUpdates) {
+      setUpdates(cachedUpdates);
+    } else {
+      window.mcl
+        .findUpdates(type, version)
+        .then((ups) => {
+          if (stale) return;
+          updatesCache.set(cacheKey(type, version), ups);
+          setUpdates(ups);
+        })
+        .catch(() => {
+          if (!stale) setUpdates([]);
+        });
+    }
+
     return () => {
       stale = true;
     };
@@ -87,7 +118,7 @@ export function Catalog({
     try {
       await window.mcl.installContent(item.type, item.slug, version);
       onInstalled?.();
-      await refreshInstalled();
+      await refreshState();
       setBusy((s) => {
         const next = { ...s };
         delete next[item.slug];
@@ -103,9 +134,9 @@ export function Catalog({
     setRemoving((r) => ({ ...r, [file]: true }));
     try {
       await window.mcl.removeInstalled(type, version, file);
-      await refreshInstalled();
+      await refreshState();
     } catch {
-      // leave it in the list; the user can retry
+      // leave it; the user can retry
     } finally {
       setRemoving((r) => {
         const next = { ...r };
@@ -114,6 +145,50 @@ export function Catalog({
       });
     }
   }
+
+  async function update(oldFileName: string): Promise<void> {
+    setUpdating((u) => ({ ...u, [oldFileName]: true }));
+    try {
+      await window.mcl.updateContent(type, version, oldFileName);
+      onInstalled?.();
+      await refreshState();
+    } catch {
+      // leave it; the user can retry
+    } finally {
+      setUpdating((u) => {
+        const next = { ...u };
+        delete next[oldFileName];
+        return next;
+      });
+    }
+  }
+
+  async function updateAll(): Promise<void> {
+    const targets = updates.map((u) => u.oldFileName);
+    setUpdating((u) => ({
+      ...u,
+      ...Object.fromEntries(targets.map((t) => [t, true])),
+    }));
+    try {
+      for (const target of targets) {
+        await window.mcl.updateContent(type, version, target);
+      }
+      onInstalled?.();
+      await refreshState();
+    } catch {
+      // partial updates still apply; refresh reflects what landed
+      await refreshState();
+    } finally {
+      setUpdating({});
+    }
+  }
+
+  const updateForFile = (file: string): ContentUpdate | undefined =>
+    updates.find((u) => u.oldFileName === file);
+  const updateForCard = (item: RecommendedItem): ContentUpdate | undefined =>
+    item.fileName
+      ? updates.find((u) => u.newFileName === item.fileName)
+      : undefined;
 
   const noun = type === "shader" ? "shaders" : "mods";
 
@@ -145,6 +220,7 @@ export function Catalog({
         const transient = busy[item.slug];
         const installed =
           item.fileName !== null && installedFiles.includes(item.fileName);
+        const cardUpdate = updateForCard(item);
         return (
           <div className="catalog-item" key={item.slug}>
             {item.iconUrl ? (
@@ -175,6 +251,14 @@ export function Catalog({
                 <button className="mc-btn catalog-btn catalog-btn-install" disabled>
                   INSTALLING…
                 </button>
+              ) : cardUpdate ? (
+                <button
+                  className="mc-btn catalog-btn catalog-btn-update"
+                  disabled={Boolean(updating[cardUpdate.oldFileName])}
+                  onClick={() => void update(cardUpdate.oldFileName)}
+                >
+                  {updating[cardUpdate.oldFileName] ? "UPDATING…" : "UPDATE"}
+                </button>
               ) : installed ? (
                 <span className="catalog-installed">✓ Installed</span>
               ) : (
@@ -195,28 +279,54 @@ export function Catalog({
       })}
 
       <div className="installed">
-        <h3 className="installed-title">
-          {type === "shader"
-            ? "Installed shaderpacks"
-            : `Installed for ${version}`}
-        </h3>
+        <div className="installed-head">
+          <h3 className="installed-title">
+            {type === "shader"
+              ? "Installed shaderpacks"
+              : `Installed for ${version}`}
+          </h3>
+          {updates.length > 0 && (
+            <button
+              type="button"
+              className="installed-update-all"
+              onClick={() => void updateAll()}
+            >
+              ↑ Update all ({updates.length})
+            </button>
+          )}
+        </div>
         {installedFiles.length === 0 ? (
           <p className="notes-meta">Nothing installed yet.</p>
         ) : (
           <ul className="installed-list">
-            {installedFiles.map((file) => (
-              <li className="installed-item" key={file}>
-                <span className="installed-name">{file}</span>
-                <button
-                  type="button"
-                  className="installed-remove"
-                  disabled={Boolean(removing[file])}
-                  onClick={() => void remove(file)}
-                >
-                  {removing[file] ? "Removing…" : "✕ Remove"}
-                </button>
-              </li>
-            ))}
+            {installedFiles.map((file) => {
+              const fileUpdate = updateForFile(file);
+              return (
+                <li className="installed-item" key={file}>
+                  <span className="installed-name">{file}</span>
+                  <div className="installed-actions">
+                    {fileUpdate && (
+                      <button
+                        type="button"
+                        className="installed-update"
+                        disabled={Boolean(updating[file])}
+                        onClick={() => void update(file)}
+                      >
+                        {updating[file] ? "Updating…" : "↑ Update"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="installed-remove"
+                      disabled={Boolean(removing[file])}
+                      onClick={() => void remove(file)}
+                    >
+                      {removing[file] ? "Removing…" : "✕ Remove"}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
