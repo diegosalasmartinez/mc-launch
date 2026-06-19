@@ -18,7 +18,9 @@ export async function getProject(slug: string): Promise<ModrinthProject> {
   return getJson<ModrinthProject>(`${API}/project/${encodeURIComponent(slug)}`);
 }
 
-// the version list comes back newest-first; the first match is the one we want
+// the version list comes back newest-first. Prefer the newest stable release over
+// betas/alphas (a "latest" beta of one mod often breaks its pairing with another,
+// e.g. a Sodium beta that Iris doesn't support yet). Fall back to newest if no release.
 export async function getCompatibleVersion(
   idOrSlug: string,
   gameVersion: string,
@@ -28,11 +30,23 @@ export async function getCompatibleVersion(
     `${API}/project/${encodeURIComponent(idOrSlug)}/version` +
     `?loaders=${arrayParam([loader])}&game_versions=${arrayParam([gameVersion])}`;
   const versions = await getJson<ModrinthVersion[]>(url);
-  return versions[0] ?? null;
+  return versions.find((v) => v.version_type === "release") ?? versions[0] ?? null;
 }
 
 export function primaryFile(version: ModrinthVersion): ModrinthFile | null {
   return version.files.find((f) => f.primary) ?? version.files[0] ?? null;
+}
+
+// given file hashes (sha512), return the version each file belongs to, keyed by
+// the input hash. Used to figure out which project an installed file is.
+export async function versionsByHash(
+  hashes: string[],
+): Promise<Record<string, ModrinthVersion>> {
+  if (hashes.length === 0) return {};
+  return postJson<Record<string, ModrinthVersion>>(`${API}/version_files`, {
+    hashes,
+    algorithm: "sha512",
+  });
 }
 
 // given file hashes (sha512), return the latest version matching loader + game

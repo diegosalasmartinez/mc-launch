@@ -8,6 +8,7 @@ import {
   latestVersionsByHash,
   primaryFile,
   resolveRequiredDeps,
+  versionsByHash,
 } from "./modrinth.js";
 import type { ModrinthVersion } from "../types/modrinth.js";
 
@@ -89,6 +90,8 @@ export async function detectUpdates(
   for (const { file, hash } of valid) {
     const version = latest[hash];
     if (!version) continue; // unknown file, or no build for this version
+    // don't push people from a stable build onto a beta/alpha "latest"
+    if (version.version_type !== "release") continue;
     const primary = primaryFile(version);
     if (!primary?.hashes.sha512) continue;
     if (primary.hashes.sha512 !== hash) {
@@ -128,26 +131,64 @@ export async function isInstalled(
   return fileExists(path.join(dir, file.filename));
 }
 
+// remove any installed file that's a different build of a project we're about to
+// install, so we never end up with two versions of the same mod (the classic
+// Fabric "duplicate mod" / mismatched Sodium crash).
+async function removeStaleProjectFiles(
+  destDir: string,
+  projectIds: Set<string>,
+  keepNames: Set<string>,
+): Promise<void> {
+  const existing = (await listInstalledFiles(destDir)).filter(
+    (f) => !keepNames.has(f),
+  );
+  if (existing.length === 0) return;
+
+  const hashed = await mapLimit(existing, DOWNLOAD_CONCURRENCY, async (f) => ({
+    file: f,
+    hash: await sha512OfFile(path.join(destDir, f)),
+  }));
+  const valid = hashed.filter(
+    (h): h is { file: string; hash: string } => h.hash !== null,
+  );
+  if (valid.length === 0) return;
+
+  const byHash = await versionsByHash(valid.map((v) => v.hash));
+  for (const { file, hash } of valid) {
+    const version = byHash[hash];
+    if (version && projectIds.has(version.project_id)) {
+      await removeInstalledFile(destDir, file);
+    }
+  }
+}
+
 async function downloadPrimaryFiles(
   versions: ModrinthVersion[],
   destDir: string,
   onProgress?: (done: number, total: number) => void,
 ): Promise<string[]> {
-  const files = versions
-    .map((v) => primaryFile(v))
-    .filter((f): f is NonNullable<typeof f> => f !== null);
+  const entries = versions
+    .map((v) => ({ projectId: v.project_id, file: primaryFile(v) }))
+    .filter(
+      (e): e is { projectId: string; file: NonNullable<typeof e.file> } =>
+        e.file !== null,
+    );
+
+  const keepNames = new Set(entries.map((e) => e.file.filename));
+  const projectIds = new Set(entries.map((e) => e.projectId));
+  await removeStaleProjectFiles(destDir, projectIds, keepNames);
 
   let done = 0;
-  await mapLimit(files, DOWNLOAD_CONCURRENCY, async (f) => {
+  await mapLimit(entries, DOWNLOAD_CONCURRENCY, async ({ file }) => {
     await downloadVerified({
-      url: f.url,
-      dest: path.join(destDir, f.filename),
-      ...(f.hashes.sha1 ? { sha1: f.hashes.sha1 } : {}),
+      url: file.url,
+      dest: path.join(destDir, file.filename),
+      ...(file.hashes.sha1 ? { sha1: file.hashes.sha1 } : {}),
     });
     done++;
-    onProgress?.(done, files.length);
+    onProgress?.(done, entries.length);
   });
-  return files.map((f) => f.filename);
+  return entries.map((e) => e.file.filename);
 }
 
 // download a Fabric mod (plus its required deps, e.g. Fabric API) into mods/.
@@ -169,15 +210,15 @@ export async function installMod(
   );
 }
 
-// shaders need the Iris loader + Sodium renderer as mods, plus the shaderpack .zip
-// dropped (unextracted) into shaderpacks/ — Iris reads the zip directly.
+// shaders need Iris (which pulls the exact Sodium build it's compatible with via
+// its own dependency — don't install Sodium separately, or we'd grab a mismatched
+// "latest" Sodium). The shaderpack .zip then goes (unextracted) into shaderpacks/.
 export async function installShader(
   paths: GamePaths,
   mcVersion: string,
   slug: string,
   onProgress?: (done: number, total: number) => void,
 ): Promise<string[]> {
-  await installMod(paths, mcVersion, "sodium");
   await installMod(paths, mcVersion, "iris");
 
   const version = await getCompatibleVersion(slug, mcVersion, SHADER_LOADER);

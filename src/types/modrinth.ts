@@ -24,6 +24,8 @@ export interface ModrinthDependency {
 export interface ModrinthVersion {
   id: string;
   project_id: string;
+  /** "release" | "beta" | "alpha" */
+  version_type: string;
   game_versions: string[];
   loaders: string[];
   files: ModrinthFile[];
