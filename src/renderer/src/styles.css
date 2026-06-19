@@ -340,6 +340,71 @@ body {
   color: var(--muted);
 }
 
+/* ---- Installed list (manage / uninstall) --------------------------------- */
+
+.installed {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 2px solid #000;
+}
+
+.installed-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.installed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.installed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #0f0d0a;
+  border: 2px solid #000;
+  padding: 8px 12px;
+}
+
+.installed-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.installed-remove {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.installed-remove:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.installed-remove:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
 .catalog-browse-lead {
   margin: 0;
   letter-spacing: 1px;

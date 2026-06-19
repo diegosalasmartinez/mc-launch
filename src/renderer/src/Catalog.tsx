@@ -3,10 +3,10 @@ import type { ContentType, RecommendedItem } from "../../shared/ipc.js";
 import { toFriendlyError } from "./errors.js";
 
 type ListState = "loading" | "ready" | "error";
-type ItemState = "idle" | "installing" | "installed" | "error";
+type ItemState = "installing" | "error";
 
-// Session cache so switching tabs (or coming back to a version) doesn't re-hit
-// Modrinth every time. Keyed by type+version; lives for the app session.
+// Session cache for the curated list (Modrinth lookups). The installed-files list
+// is read fresh from disk — it's local and cheap, and must stay accurate.
 const listCache = new Map<string, RecommendedItem[]>();
 const cacheKey = (type: ContentType, version: string): string =>
   `${type}:${version}`;
@@ -28,81 +28,94 @@ export function Catalog({
 }): JSX.Element {
   const [items, setItems] = useState<RecommendedItem[]>([]);
   const [listState, setListState] = useState<ListState>("loading");
-  const [states, setStates] = useState<Record<string, ItemState>>({});
+  // the on-disk truth: filenames present in this version's folder
+  const [installedFiles, setInstalledFiles] = useState<string[]>([]);
+  const [busy, setBusy] = useState<Record<string, ItemState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [removing, setRemoving] = useState<Record<string, boolean>>({});
 
-  function applyList(list: RecommendedItem[]): void {
-    setItems(list);
-    setStates(
-      Object.fromEntries(
-        list.map((it) => [it.slug, it.installed ? "installed" : "idle"]),
-      ),
-    );
-    setListState("ready");
+  async function refreshInstalled(): Promise<void> {
+    try {
+      setInstalledFiles(await window.mcl.listInstalled(type, version));
+    } catch {
+      // keep whatever we had; the list just won't update
+    }
   }
 
   useEffect(() => {
     if (!version) return;
+    let stale = false;
 
     const cached = listCache.get(cacheKey(type, version));
     if (cached) {
-      applyList(cached);
-      return;
+      setItems(cached);
+      setListState("ready");
+    } else {
+      setListState("loading");
+      const load =
+        type === "shader"
+          ? window.mcl.listRecommendedShaders(version)
+          : window.mcl.listRecommendedMods(version);
+      load
+        .then((list) => {
+          if (stale) return;
+          listCache.set(cacheKey(type, version), list);
+          setItems(list);
+          setListState("ready");
+        })
+        .catch(() => {
+          if (!stale) setListState("error");
+        });
     }
 
-    let stale = false;
-    setListState("loading");
-    const load =
-      type === "shader"
-        ? window.mcl.listRecommendedShaders(version)
-        : window.mcl.listRecommendedMods(version);
-    load
-      .then((list) => {
-        if (stale) return;
-        listCache.set(cacheKey(type, version), list);
-        applyList(list);
+    window.mcl
+      .listInstalled(type, version)
+      .then((files) => {
+        if (!stale) setInstalledFiles(files);
       })
       .catch(() => {
-        if (!stale) setListState("error");
+        if (!stale) setInstalledFiles([]);
       });
+
     return () => {
       stale = true;
     };
   }, [type, version]);
 
   async function install(item: RecommendedItem): Promise<void> {
-    setStates((s) => ({ ...s, [item.slug]: "installing" }));
+    setBusy((s) => ({ ...s, [item.slug]: "installing" }));
     try {
       await window.mcl.installContent(item.type, item.slug, version);
-      setStates((s) => ({ ...s, [item.slug]: "installed" }));
       onInstalled?.();
-      // keep the cache in sync so re-entering the tab still shows it installed
-      const key = cacheKey(type, version);
-      const cached = listCache.get(key);
-      if (cached) {
-        listCache.set(
-          key,
-          cached.map((it) =>
-            it.slug === item.slug ? { ...it, installed: true } : it,
-          ),
-        );
-      }
+      await refreshInstalled();
+      setBusy((s) => {
+        const next = { ...s };
+        delete next[item.slug];
+        return next;
+      });
     } catch (err: unknown) {
       setErrors((e) => ({ ...e, [item.slug]: toFriendlyError(err).title }));
-      setStates((s) => ({ ...s, [item.slug]: "error" }));
+      setBusy((s) => ({ ...s, [item.slug]: "error" }));
     }
   }
 
-  if (listState === "loading") {
-    return <p className="notes-meta">Loading recommendations…</p>;
+  async function remove(file: string): Promise<void> {
+    setRemoving((r) => ({ ...r, [file]: true }));
+    try {
+      await window.mcl.removeInstalled(type, version, file);
+      await refreshInstalled();
+    } catch {
+      // leave it in the list; the user can retry
+    } finally {
+      setRemoving((r) => {
+        const next = { ...r };
+        delete next[file];
+        return next;
+      });
+    }
   }
-  if (listState === "error") {
-    return (
-      <p className="notes-meta">
-        Couldn’t load recommendations (are you offline?).
-      </p>
-    );
-  }
+
+  const noun = type === "shader" ? "shaders" : "mods";
 
   return (
     <div className="catalog">
@@ -118,8 +131,20 @@ export function Catalog({
           Video Settings → Shader Packs.
         </p>
       )}
+
+      {listState === "loading" && (
+        <p className="notes-meta">Loading recommendations…</p>
+      )}
+      {listState === "error" && (
+        <p className="notes-meta">
+          Couldn’t load recommendations (are you offline?).
+        </p>
+      )}
+
       {items.map((item) => {
-        const state = states[item.slug] ?? "idle";
+        const transient = busy[item.slug];
+        const installed =
+          item.fileName !== null && installedFiles.includes(item.fileName);
         return (
           <div className="catalog-item" key={item.slug}>
             {item.iconUrl ? (
@@ -139,28 +164,29 @@ export function Catalog({
               <a className="catalog-link" href={item.pageUrl}>
                 View on Modrinth
               </a>
-              {state === "error" && errors[item.slug] && (
+              {transient === "error" && errors[item.slug] && (
                 <p className="catalog-error">{errors[item.slug]}</p>
               )}
             </div>
             <div className="catalog-action">
               {!item.compatible ? (
                 <span className="catalog-na">Not available for {version}</span>
-              ) : state === "installed" ? (
+              ) : transient === "installing" ? (
+                <button className="mc-btn catalog-btn catalog-btn-install" disabled>
+                  INSTALLING…
+                </button>
+              ) : installed ? (
                 <span className="catalog-installed">✓ Installed</span>
               ) : (
                 <button
                   className={`mc-btn catalog-btn ${
-                    state === "error" ? "catalog-btn-retry" : "catalog-btn-install"
+                    transient === "error"
+                      ? "catalog-btn-retry"
+                      : "catalog-btn-install"
                   }`}
-                  disabled={state === "installing"}
                   onClick={() => void install(item)}
                 >
-                  {state === "installing"
-                    ? "INSTALLING…"
-                    : state === "error"
-                      ? "RETRY"
-                      : "INSTALL"}
+                  {transient === "error" ? "RETRY" : "INSTALL"}
                 </button>
               )}
             </div>
@@ -168,11 +194,36 @@ export function Catalog({
         );
       })}
 
+      <div className="installed">
+        <h3 className="installed-title">
+          {type === "shader"
+            ? "Installed shaderpacks"
+            : `Installed for ${version}`}
+        </h3>
+        {installedFiles.length === 0 ? (
+          <p className="notes-meta">Nothing installed yet.</p>
+        ) : (
+          <ul className="installed-list">
+            {installedFiles.map((file) => (
+              <li className="installed-item" key={file}>
+                <span className="installed-name">{file}</span>
+                <button
+                  type="button"
+                  className="installed-remove"
+                  disabled={Boolean(removing[file])}
+                  onClick={() => void remove(file)}
+                >
+                  {removing[file] ? "Removing…" : "✕ Remove"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="catalog-browse">
         <p className="catalog-browse-lead">Want something that isn’t listed?</p>
-        <a href={BROWSE_URL[type]}>
-          Browse {type === "shader" ? "shaders" : "mods"} on Modrinth →
-        </a>
+        <a href={BROWSE_URL[type]}>Browse {noun} on Modrinth →</a>
         <ol className="catalog-steps">
           {type === "mod" ? (
             <>
@@ -207,7 +258,7 @@ export function Catalog({
               : window.mcl.openModsFolder(version))
           }
         >
-          Open {type === "shader" ? "shaders" : "mods"} folder
+          Open {noun} folder
         </button>
         <span className="catalog-browse-soon">In-app search coming soon.</span>
       </div>
