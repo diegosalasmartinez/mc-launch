@@ -70,6 +70,7 @@ export const IPC = {
   getSettings: "launcher:getSettings",
   saveSettings: "launcher:saveSettings",
   openModsFolder: "launcher:openModsFolder",
+  openShadersFolder: "launcher:openShadersFolder",
   listRecommendedMods: "launcher:listRecommendedMods",
   listRecommendedShaders: "launcher:listRecommendedShaders",
   installContent: "launcher:installContent",
@@ -82,7 +83,8 @@ export interface LauncherApi {
   getReleaseNotes(version: string): Promise<ReleaseNotes | null>;
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
-  openModsFolder(): Promise<void>;
+  openModsFolder(version: string): Promise<void>;
+  openShadersFolder(): Promise<void>;
   listRecommendedMods(version: string): Promise<RecommendedItem[]>;
   listRecommendedShaders(version: string): Promise<RecommendedItem[]>;
   installContent(

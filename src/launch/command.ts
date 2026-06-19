@@ -14,7 +14,13 @@ export interface LaunchInputs {
   classpath: string;
   nativesDir: string;
   // mod loader (Fabric): overrides mainClass and adds its own args
-  fabric?: { mainClass: string; jvmArgs: string[]; gameArgs: string[] };
+  fabric?: {
+    mainClass: string;
+    jvmArgs: string[];
+    gameArgs: string[];
+    // per-version mods directory, passed via -Dfabric.modsFolder
+    modsFolder?: string;
+  };
 }
 
 export function buildLaunchArgs(inputs: LaunchInputs): string[] {
@@ -38,6 +44,11 @@ export function buildLaunchArgs(inputs: LaunchInputs): string[] {
 
   if (fabric) {
     jvmArgs = [...jvmArgs, ...substituteAll(fabric.jvmArgs, placeholders)];
+    // point Fabric at this version's own mods folder (replaces the default), so
+    // jars from other versions never load. fabric.modsFolder, not addMods.
+    if (fabric.modsFolder) {
+      jvmArgs.push(`-Dfabric.modsFolder=${fabric.modsFolder}`);
+    }
     gameArgs = [...gameArgs, ...substituteAll(fabric.gameArgs, placeholders)];
   }
 

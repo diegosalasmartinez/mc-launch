@@ -121,8 +121,14 @@ function registerIpc(): void {
     saveSettings(settings),
   );
 
-  ipcMain.handle(IPC.openModsFolder, async () => {
-    const dir = new GamePaths().modsDir;
+  ipcMain.handle(IPC.openModsFolder, async (_event, version: string) => {
+    const dir = new GamePaths().modsDir(version);
+    await mkdir(dir, { recursive: true });
+    await shell.openPath(dir);
+  });
+
+  ipcMain.handle(IPC.openShadersFolder, async () => {
+    const dir = new GamePaths().shaderpacksDir;
     await mkdir(dir, { recursive: true });
     await shell.openPath(dir);
   });

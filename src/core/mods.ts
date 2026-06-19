@@ -69,7 +69,11 @@ export async function installMod(
     throw new Error(`"${slug}" has no Fabric build for Minecraft ${mcVersion}`);
   }
   const deps = await resolveRequiredDeps(version, mcVersion, FABRIC_LOADER);
-  return downloadPrimaryFiles([version, ...deps], paths.modsDir, onProgress);
+  return downloadPrimaryFiles(
+    [version, ...deps],
+    paths.modsDir(mcVersion),
+    onProgress,
+  );
 }
 
 // shaders need the Iris loader + Sodium renderer as mods, plus the shaderpack .zip

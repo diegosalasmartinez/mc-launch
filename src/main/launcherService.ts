@@ -66,9 +66,9 @@ async function describeRecommended(
   mcVersion: string,
 ): Promise<RecommendedItem[]> {
   const loader = type === "shader" ? SHADER_LOADER : FABRIC_LOADER;
-  const dir = type === "shader"
-    ? new GamePaths().shaderpacksDir
-    : new GamePaths().modsDir;
+  const paths = new GamePaths();
+  const dir =
+    type === "shader" ? paths.shaderpacksDir : paths.modsDir(mcVersion);
 
   const items = await mapLimit(entries, DESCRIBE_CONCURRENCY, async (entry) => {
     try {
@@ -158,6 +158,8 @@ export async function play(
             mainClass: fabric.mainClass,
             jvmArgs: fabric.jvmArgs,
             gameArgs: fabric.gameArgs,
+            // load only this version's mods, ignoring other versions' jars
+            modsFolder: prepared.paths.modsDir(prepared.version.id),
           },
         }
       : {}),

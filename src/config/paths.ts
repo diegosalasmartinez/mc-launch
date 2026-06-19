@@ -27,10 +27,13 @@ export class GamePaths {
     return path.join(this.root, "assets");
   }
 
-  get modsDir(): string {
-    return path.join(this.root, "mods");
+  // per-version mods folder, so switching Minecraft versions never mixes
+  // incompatible jars. Fabric is pointed here via -Dfabric.modsFolder at launch.
+  modsDir(version: string): string {
+    return path.join(this.root, "mods", version);
   }
 
+  // shaderpacks are version-agnostic (Iris loads any .zip), so they stay shared.
   get shaderpacksDir(): string {
     return path.join(this.root, "shaderpacks");
   }

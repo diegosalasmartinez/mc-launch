@@ -84,7 +84,7 @@ export async function prepareVersion(
   if (opts.fabric) {
     onStep?.("fabric", "Setting up Fabric…");
     fabric = await prepareFabric(paths, version.id, opts.fabricLoader);
-    await mkdir(paths.modsDir, { recursive: true });
+    await mkdir(paths.modsDir(version.id), { recursive: true });
   }
 
   const { javaBin, managedJava } = await resolveJava(paths, version, hooks);

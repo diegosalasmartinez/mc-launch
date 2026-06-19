@@ -16,7 +16,9 @@ const api: LauncherApi = {
   getSettings: () => ipcRenderer.invoke(IPC.getSettings),
   saveSettings: (settings: Settings) =>
     ipcRenderer.invoke(IPC.saveSettings, settings),
-  openModsFolder: () => ipcRenderer.invoke(IPC.openModsFolder),
+  openModsFolder: (version: string) =>
+    ipcRenderer.invoke(IPC.openModsFolder, version),
+  openShadersFolder: () => ipcRenderer.invoke(IPC.openShadersFolder),
   listRecommendedMods: (version: string) =>
     ipcRenderer.invoke(IPC.listRecommendedMods, version),
   listRecommendedShaders: (version: string) =>
