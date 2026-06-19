@@ -63,3 +63,19 @@ export async function getBuffer(url: string): Promise<Buffer> {
     return Buffer.from(arrayBuffer);
   });
 }
+
+export async function postJson<T>(url: string, body: unknown): Promise<T> {
+  return withRetry(url, async () => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      redirect: "follow",
+    });
+    if (!res.ok) throw new HttpError(url, res.status, res.statusText);
+    return (await res.json()) as T;
+  });
+}

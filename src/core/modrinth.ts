@@ -1,4 +1,4 @@
-import { getJson } from "../net/http.js";
+import { getJson, postJson } from "../net/http.js";
 import { mapLimit } from "../net/pool.js";
 import type {
   ModrinthFile,
@@ -33,6 +33,25 @@ export async function getCompatibleVersion(
 
 export function primaryFile(version: ModrinthVersion): ModrinthFile | null {
   return version.files.find((f) => f.primary) ?? version.files[0] ?? null;
+}
+
+// given file hashes (sha512), return the latest version matching loader + game
+// version for each, keyed by the input hash. Hashes with no match are omitted.
+export async function latestVersionsByHash(
+  hashes: string[],
+  loader: string,
+  gameVersion: string,
+): Promise<Record<string, ModrinthVersion>> {
+  if (hashes.length === 0) return {};
+  return postJson<Record<string, ModrinthVersion>>(
+    `${API}/version_files/update`,
+    {
+      hashes,
+      algorithm: "sha512",
+      loaders: [loader],
+      game_versions: [gameVersion],
+    },
+  );
 }
 
 // resolve only required deps (e.g. Fabric API). skip embedded (already bundled) and

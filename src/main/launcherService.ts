@@ -17,11 +17,14 @@ import {
 import {
   FABRIC_LOADER,
   SHADER_LOADER,
+  applyUpdate,
+  detectUpdates,
   installMod,
   installShader,
   isInstalled,
   listInstalledFiles,
   removeInstalledFile,
+  type ModUpdate,
 } from "../core/mods.js";
 import {
   RECOMMENDED_MODS,
@@ -30,6 +33,7 @@ import {
 } from "../core/recommended.js";
 import type {
   ContentType,
+  ContentUpdate,
   InstallResult,
   PlayOptions,
   PlayResult,
@@ -147,6 +151,35 @@ export function removeInstalled(
   fileName: string,
 ): Promise<void> {
   return removeInstalledFile(contentDir(type, version), fileName);
+}
+
+function coreUpdates(type: ContentType, version: string): Promise<ModUpdate[]> {
+  const loader = type === "shader" ? SHADER_LOADER : FABRIC_LOADER;
+  return detectUpdates(contentDir(type, version), loader, version);
+}
+
+export async function findUpdates(
+  type: ContentType,
+  version: string,
+): Promise<ContentUpdate[]> {
+  const updates = await coreUpdates(type, version);
+  return updates.map((u) => ({
+    oldFileName: u.oldFileName,
+    newFileName: u.newFileName,
+  }));
+}
+
+// re-resolve the update server-side (don't trust a renderer-supplied URL)
+export async function updateContent(
+  type: ContentType,
+  version: string,
+  oldFileName: string,
+): Promise<void> {
+  const update = (await coreUpdates(type, version)).find(
+    (u) => u.oldFileName === oldFileName,
+  );
+  if (!update) return;
+  await applyUpdate(contentDir(type, version), update);
 }
 
 export async function play(

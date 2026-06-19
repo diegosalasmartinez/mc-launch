@@ -29,6 +29,10 @@ const api: LauncherApi = {
     ipcRenderer.invoke(IPC.listInstalled, type, version),
   removeInstalled: (type: ContentType, version: string, fileName: string) =>
     ipcRenderer.invoke(IPC.removeInstalled, type, version, fileName),
+  findUpdates: (type: ContentType, version: string) =>
+    ipcRenderer.invoke(IPC.findUpdates, type, version),
+  updateContent: (type: ContentType, version: string, oldFileName: string) =>
+    ipcRenderer.invoke(IPC.updateContent, type, version, oldFileName),
   play: (opts: PlayOptions) => ipcRenderer.invoke(IPC.play, opts),
   onProgress: (cb: (event: ProgressEvent) => void) => {
     const listener = (_e: IpcRendererEvent, data: ProgressEvent) => cb(data);

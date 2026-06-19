@@ -16,6 +16,7 @@ import {
   type Settings,
 } from "../shared/ipc.js";
 import {
+  findUpdates,
   getReleaseNotes,
   installContent,
   listInstalled,
@@ -24,6 +25,7 @@ import {
   listVersions,
   play,
   removeInstalled,
+  updateContent,
 } from "./launcherService.js";
 import { loadSettings, saveSettings } from "./settings.js";
 
@@ -160,6 +162,20 @@ function registerIpc(): void {
     (_event, type: ContentType, version: string, fileName: string) => {
       console.log(`[main] remove ${type} ${fileName} (${version})`);
       return removeInstalled(type, version, fileName);
+    },
+  );
+
+  ipcMain.handle(
+    IPC.findUpdates,
+    (_event, type: ContentType, version: string) =>
+      findUpdates(type, version),
+  );
+
+  ipcMain.handle(
+    IPC.updateContent,
+    (_event, type: ContentType, version: string, oldFileName: string) => {
+      console.log(`[main] update ${type} ${oldFileName} (${version})`);
+      return updateContent(type, version, oldFileName);
     },
   );
 

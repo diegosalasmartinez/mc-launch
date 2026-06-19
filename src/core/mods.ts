@@ -1,10 +1,11 @@
 import path from "node:path";
 import { access, readdir, rm } from "node:fs/promises";
 import type { GamePaths } from "../config/paths.js";
-import { downloadVerified } from "../net/download.js";
+import { downloadVerified, sha512OfFile } from "../net/download.js";
 import { mapLimit } from "../net/pool.js";
 import {
   getCompatibleVersion,
+  latestVersionsByHash,
   primaryFile,
   resolveRequiredDeps,
 } from "./modrinth.js";
@@ -48,6 +49,71 @@ export async function removeInstalledFile(
   fileName: string,
 ): Promise<void> {
   await rm(path.join(dir, path.basename(fileName)), { force: true });
+}
+
+export interface ModUpdate {
+  /** the installed file that's out of date */
+  oldFileName: string;
+  /** the newer file to download */
+  newFileName: string;
+  url: string;
+  sha1?: string;
+}
+
+// hash every installed file, ask Modrinth for the latest build matching this
+// loader + game version, and report the ones whose primary file differs.
+export async function detectUpdates(
+  dir: string,
+  loader: string,
+  gameVersion: string,
+): Promise<ModUpdate[]> {
+  const files = await listInstalledFiles(dir);
+  const hashed = await mapLimit(files, DOWNLOAD_CONCURRENCY, async (file) => ({
+    file,
+    hash: await sha512OfFile(path.join(dir, file)),
+  }));
+  const valid = hashed.filter(
+    (h): h is { file: string; hash: string } => h.hash !== null,
+  );
+  if (valid.length === 0) return [];
+
+  const latest = await latestVersionsByHash(
+    valid.map((v) => v.hash),
+    loader,
+    gameVersion,
+  );
+
+  const updates: ModUpdate[] = [];
+  for (const { file, hash } of valid) {
+    const version = latest[hash];
+    if (!version) continue; // unknown file, or no build for this version
+    const primary = primaryFile(version);
+    if (!primary?.hashes.sha512) continue;
+    if (primary.hashes.sha512 !== hash) {
+      updates.push({
+        oldFileName: file,
+        newFileName: primary.filename,
+        url: primary.url,
+        ...(primary.hashes.sha1 ? { sha1: primary.hashes.sha1 } : {}),
+      });
+    }
+  }
+  return updates;
+}
+
+// download the newer file, then drop the old one (unless same name -> overwritten)
+export async function applyUpdate(
+  dir: string,
+  update: ModUpdate,
+): Promise<void> {
+  await downloadVerified({
+    url: update.url,
+    dest: path.join(dir, update.newFileName),
+    ...(update.sha1 ? { sha1: update.sha1 } : {}),
+  });
+  if (update.oldFileName !== update.newFileName) {
+    await removeInstalledFile(dir, update.oldFileName);
+  }
 }
 
 // has this version's primary file already been written into `dir`?

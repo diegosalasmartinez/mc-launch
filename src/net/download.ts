@@ -20,6 +20,19 @@ function sha1OfBuffer(buf: Buffer): string {
   return createHash("sha1").update(buf).digest("hex");
 }
 
+// Modrinth keys its update lookups on sha512, so we hash installed files with it.
+export async function sha512OfFile(filePath: string): Promise<string | null> {
+  try {
+    const hash = createHash("sha512");
+    const stream = createReadStream(filePath);
+    for await (const chunk of stream) hash.update(chunk as Buffer);
+    return hash.digest("hex");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
+  }
+}
+
 export interface DownloadSpec {
   url: string;
   /** expected sha1; verification enforced when present */

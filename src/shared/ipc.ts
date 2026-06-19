@@ -49,6 +49,12 @@ export interface InstallResult {
   files: string[];
 }
 
+/** an installed file with a newer build available */
+export interface ContentUpdate {
+  oldFileName: string;
+  newFileName: string;
+}
+
 export interface ReleaseNotes {
   version: string;
   title: string;
@@ -78,6 +84,8 @@ export const IPC = {
   installContent: "launcher:installContent",
   listInstalled: "launcher:listInstalled",
   removeInstalled: "launcher:removeInstalled",
+  findUpdates: "launcher:findUpdates",
+  updateContent: "launcher:updateContent",
   play: "launcher:play",
   progress: "launcher:progress",
 } as const;
@@ -102,6 +110,13 @@ export interface LauncherApi {
     type: ContentType,
     version: string,
     fileName: string,
+  ): Promise<void>;
+  /** installed files that have a newer build available */
+  findUpdates(type: ContentType, version: string): Promise<ContentUpdate[]>;
+  updateContent(
+    type: ContentType,
+    version: string,
+    oldFileName: string,
   ): Promise<void>;
   play(opts: PlayOptions): Promise<PlayResult>;
   /** returns an unsubscribe function */
