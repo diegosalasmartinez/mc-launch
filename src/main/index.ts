@@ -18,10 +18,12 @@ import {
 import {
   getReleaseNotes,
   installContent,
+  listInstalled,
   listRecommendedMods,
   listRecommendedShaders,
   listVersions,
   play,
+  removeInstalled,
 } from "./launcherService.js";
 import { loadSettings, saveSettings } from "./settings.js";
 
@@ -144,6 +146,20 @@ function registerIpc(): void {
     (_event, type: ContentType, slug: string, version: string) => {
       console.log(`[main] install ${type} ${slug} for ${version}`);
       return installContent(type, slug, version);
+    },
+  );
+
+  ipcMain.handle(
+    IPC.listInstalled,
+    (_event, type: ContentType, version: string) =>
+      listInstalled(type, version),
+  );
+
+  ipcMain.handle(
+    IPC.removeInstalled,
+    (_event, type: ContentType, version: string, fileName: string) => {
+      console.log(`[main] remove ${type} ${fileName} (${version})`);
+      return removeInstalled(type, version, fileName);
     },
   );
 

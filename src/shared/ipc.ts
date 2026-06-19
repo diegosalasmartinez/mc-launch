@@ -40,6 +40,8 @@ export interface RecommendedItem {
   compatible: boolean;
   /** its files are already present on disk */
   installed: boolean;
+  /** primary file name of the compatible build (used to match/uninstall), if any */
+  fileName: string | null;
 }
 
 export interface InstallResult {
@@ -74,6 +76,8 @@ export const IPC = {
   listRecommendedMods: "launcher:listRecommendedMods",
   listRecommendedShaders: "launcher:listRecommendedShaders",
   installContent: "launcher:installContent",
+  listInstalled: "launcher:listInstalled",
+  removeInstalled: "launcher:removeInstalled",
   play: "launcher:play",
   progress: "launcher:progress",
 } as const;
@@ -92,6 +96,13 @@ export interface LauncherApi {
     slug: string,
     version: string,
   ): Promise<InstallResult>;
+  /** filenames currently present in the version's mods folder (or shaderpacks) */
+  listInstalled(type: ContentType, version: string): Promise<string[]>;
+  removeInstalled(
+    type: ContentType,
+    version: string,
+    fileName: string,
+  ): Promise<void>;
   play(opts: PlayOptions): Promise<PlayResult>;
   /** returns an unsubscribe function */
   onProgress(cb: (event: ProgressEvent) => void): () => void;

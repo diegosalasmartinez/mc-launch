@@ -1,5 +1,5 @@
 import path from "node:path";
-import { access } from "node:fs/promises";
+import { access, readdir, rm } from "node:fs/promises";
 import type { GamePaths } from "../config/paths.js";
 import { downloadVerified } from "../net/download.js";
 import { mapLimit } from "../net/pool.js";
@@ -23,6 +23,31 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// every jar/zip currently sitting in `dir` (sorted). missing dir -> empty list.
+export async function listInstalledFiles(dir: string): Promise<string[]> {
+  try {
+    const entries = await readdir(dir, { withFileTypes: true });
+    return entries
+      .filter(
+        (e) =>
+          e.isFile() &&
+          (e.name.endsWith(".jar") || e.name.endsWith(".zip")),
+      )
+      .map((e) => e.name)
+      .sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+// delete a single file from `dir`. basename-only, so it can't escape the folder.
+export async function removeInstalledFile(
+  dir: string,
+  fileName: string,
+): Promise<void> {
+  await rm(path.join(dir, path.basename(fileName)), { force: true });
 }
 
 // has this version's primary file already been written into `dir`?

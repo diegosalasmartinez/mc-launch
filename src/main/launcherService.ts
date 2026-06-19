@@ -9,13 +9,19 @@ import { buildLaunchArgs } from "../launch/command.js";
 import { spawnGame } from "../launch/spawn.js";
 import { GamePaths } from "../config/paths.js";
 import { mapLimit } from "../net/pool.js";
-import { getCompatibleVersion, getProject } from "../core/modrinth.js";
+import {
+  getCompatibleVersion,
+  getProject,
+  primaryFile,
+} from "../core/modrinth.js";
 import {
   FABRIC_LOADER,
   SHADER_LOADER,
   installMod,
   installShader,
   isInstalled,
+  listInstalledFiles,
+  removeInstalledFile,
 } from "../core/mods.js";
 import {
   RECOMMENDED_MODS,
@@ -76,6 +82,7 @@ async function describeRecommended(
         getProject(entry.slug),
         getCompatibleVersion(entry.slug, mcVersion, loader),
       ]);
+      const file = version ? primaryFile(version) : null;
       const item: RecommendedItem = {
         slug: entry.slug,
         type,
@@ -87,6 +94,7 @@ async function describeRecommended(
         license: project.license?.id ?? null,
         compatible: version !== null,
         installed: version ? await isInstalled(version, dir) : false,
+        fileName: file?.filename ?? null,
       };
       return item;
     } catch {
@@ -119,6 +127,26 @@ export async function installContent(
       ? await installShader(paths, version, slug)
       : await installMod(paths, version, slug);
   return { files };
+}
+
+function contentDir(type: ContentType, version: string): string {
+  const paths = new GamePaths();
+  return type === "shader" ? paths.shaderpacksDir : paths.modsDir(version);
+}
+
+export function listInstalled(
+  type: ContentType,
+  version: string,
+): Promise<string[]> {
+  return listInstalledFiles(contentDir(type, version));
+}
+
+export function removeInstalled(
+  type: ContentType,
+  version: string,
+  fileName: string,
+): Promise<void> {
+  return removeInstalledFile(contentDir(type, version), fileName);
 }
 
 export async function play(

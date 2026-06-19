@@ -25,6 +25,10 @@ const api: LauncherApi = {
     ipcRenderer.invoke(IPC.listRecommendedShaders, version),
   installContent: (type: ContentType, slug: string, version: string) =>
     ipcRenderer.invoke(IPC.installContent, type, slug, version),
+  listInstalled: (type: ContentType, version: string) =>
+    ipcRenderer.invoke(IPC.listInstalled, type, version),
+  removeInstalled: (type: ContentType, version: string, fileName: string) =>
+    ipcRenderer.invoke(IPC.removeInstalled, type, version, fileName),
   play: (opts: PlayOptions) => ipcRenderer.invoke(IPC.play, opts),
   onProgress: (cb: (event: ProgressEvent) => void) => {
     const listener = (_e: IpcRendererEvent, data: ProgressEvent) => cb(data);
