@@ -209,6 +209,14 @@ export function App(): JSX.Element {
     void startPlay(version, username, fabric);
   }
 
+  // installed mods/shaders only load when launching with Fabric, so turn it on
+  // automatically once the user installs something from the catalog.
+  function enableFabric(): void {
+    if (fabric) return;
+    setFabric(true);
+    void window.mcl.saveSettings({ fabric: true });
+  }
+
   function dismissWelcome(): void {
     setShowWelcome(false);
     void window.mcl.saveSettings({
@@ -289,7 +297,11 @@ export function App(): JSX.Element {
 
       {tab !== "play" ? (
         <section className="notes notes-tabbed">
-          <Catalog type={tab === "shaders" ? "shader" : "mod"} version={version} />
+          <Catalog
+            type={tab === "shaders" ? "shader" : "mod"}
+            version={version}
+            onInstalled={enableFabric}
+          />
         </section>
       ) : logs.length > 0 ? (
         <pre className="logs notes-tabbed" ref={logRef}>
@@ -397,15 +409,6 @@ export function App(): JSX.Element {
             />
             <span>Fabric mods</span>
           </label>
-          {fabric && (
-            <button
-              type="button"
-              className="linkish"
-              onClick={() => void window.mcl.openModsFolder()}
-            >
-              Open mods folder
-            </button>
-          )}
         </div>
 
         <div className={`status${phase === "error" ? " status-error" : ""}`}>

@@ -284,11 +284,98 @@ body {
   min-width: 120px;
 }
 
+/* INSTALL = inviting green action */
+.catalog-btn-install {
+  background: var(--grass);
+  box-shadow:
+    inset 2px 2px 0 var(--grass-light),
+    inset -2px -2px 0 var(--grass-dark);
+}
+
+.catalog-btn-install:active:not(:disabled) {
+  box-shadow:
+    inset -2px -2px 0 var(--grass-light),
+    inset 2px 2px 0 var(--grass-dark);
+}
+
+/* RETRY (after a failed install) = amber, clearly not the normal action */
+.catalog-btn-retry {
+  background: var(--gold);
+  color: #1a1206;
+  text-shadow: none;
+  box-shadow:
+    inset 2px 2px 0 #ffce5c,
+    inset -2px -2px 0 #b87b00;
+}
+
+/* Installed = a done-state badge, not a button — distinct at a glance */
+.catalog-installed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 120px;
+  padding: 9px 16px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--grass-light);
+  border: 2px dashed var(--grass-dark);
+}
+
 .catalog-na {
   max-width: 120px;
   font-size: 11px;
   text-align: right;
   color: var(--muted);
+}
+
+.catalog-browse {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 2px solid #000;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.catalog-browse-lead {
+  margin: 0;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+
+.catalog-browse a {
+  color: var(--grass-light);
+  text-decoration: underline;
+  letter-spacing: 1px;
+}
+
+.catalog-steps {
+  margin: 6px 0 4px;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.catalog-steps li {
+  margin: 2px 0;
+}
+
+.catalog-steps strong {
+  color: var(--text);
+}
+
+.catalog-folder-btn {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 9px 16px;
+  margin-top: 2px;
+}
+
+.catalog-browse-soon {
+  font-size: 11px;
+  color: #6b6457;
 }
 
 /* ---- Bottom controls bar ------------------------------------------------- */
