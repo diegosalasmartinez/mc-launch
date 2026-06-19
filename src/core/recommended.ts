@@ -12,3 +12,5 @@ export interface RecommendedEntry {
 
 export const RECOMMENDED_MODS: RecommendedEntry[] = catalog.mods;
 export const RECOMMENDED_SHADERS: RecommendedEntry[] = catalog.shaders;
+export const RECOMMENDED_RESOURCEPACKS: RecommendedEntry[] =
+  catalog.resourcepacks;

@@ -16,10 +16,12 @@ import {
 } from "../core/modrinth.js";
 import {
   FABRIC_LOADER,
+  RESOURCEPACK_LOADER,
   SHADER_LOADER,
   applyUpdate,
   detectUpdates,
   installMod,
+  installResourcepack,
   installShader,
   isInstalled,
   listInstalledFiles,
@@ -28,6 +30,7 @@ import {
 } from "../core/mods.js";
 import {
   RECOMMENDED_MODS,
+  RECOMMENDED_RESOURCEPACKS,
   RECOMMENDED_SHADERS,
   type RecommendedEntry,
 } from "../core/recommended.js";
@@ -75,10 +78,8 @@ async function describeRecommended(
   type: ContentType,
   mcVersion: string,
 ): Promise<RecommendedItem[]> {
-  const loader = type === "shader" ? SHADER_LOADER : FABRIC_LOADER;
-  const paths = new GamePaths();
-  const dir =
-    type === "shader" ? paths.shaderpacksDir : paths.modsDir(mcVersion);
+  const loader = loaderFor(type);
+  const dir = contentDir(type, mcVersion);
 
   const items = await mapLimit(entries, DESCRIBE_CONCURRENCY, async (entry) => {
     try {
@@ -120,6 +121,16 @@ export function listRecommendedShaders(
   return describeRecommended(RECOMMENDED_SHADERS, "shader", version);
 }
 
+export function listRecommendedResourcepacks(
+  version: string,
+): Promise<RecommendedItem[]> {
+  return describeRecommended(
+    RECOMMENDED_RESOURCEPACKS,
+    "resourcepack",
+    version,
+  );
+}
+
 export async function installContent(
   type: ContentType,
   slug: string,
@@ -129,13 +140,23 @@ export async function installContent(
   const files =
     type === "shader"
       ? await installShader(paths, version, slug)
-      : await installMod(paths, version, slug);
+      : type === "resourcepack"
+        ? await installResourcepack(paths, version, slug)
+        : await installMod(paths, version, slug);
   return { files };
+}
+
+function loaderFor(type: ContentType): string {
+  if (type === "shader") return SHADER_LOADER;
+  if (type === "resourcepack") return RESOURCEPACK_LOADER;
+  return FABRIC_LOADER;
 }
 
 function contentDir(type: ContentType, version: string): string {
   const paths = new GamePaths();
-  return type === "shader" ? paths.shaderpacksDir : paths.modsDir(version);
+  if (type === "shader") return paths.shaderpacksDir;
+  if (type === "resourcepack") return paths.resourcepacksDir;
+  return paths.modsDir(version);
 }
 
 export function listInstalled(
@@ -154,8 +175,7 @@ export function removeInstalled(
 }
 
 function coreUpdates(type: ContentType, version: string): Promise<ModUpdate[]> {
-  const loader = type === "shader" ? SHADER_LOADER : FABRIC_LOADER;
-  return detectUpdates(contentDir(type, version), loader, version);
+  return detectUpdates(contentDir(type, version), loaderFor(type), version);
 }
 
 export async function findUpdates(

@@ -38,6 +38,11 @@ export class GamePaths {
     return path.join(this.root, "shaderpacks");
   }
 
+  // resource packs are version-agnostic too, and shared with the vanilla launcher.
+  get resourcepacksDir(): string {
+    return path.join(this.root, "resourcepacks");
+  }
+
   get assetIndexesDir(): string {
     return path.join(this.assetsDir, "indexes");
   }

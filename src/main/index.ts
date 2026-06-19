@@ -21,6 +21,7 @@ import {
   installContent,
   listInstalled,
   listRecommendedMods,
+  listRecommendedResourcepacks,
   listRecommendedShaders,
   listVersions,
   play,
@@ -137,11 +138,20 @@ function registerIpc(): void {
     await shell.openPath(dir);
   });
 
+  ipcMain.handle(IPC.openResourcepacksFolder, async () => {
+    const dir = new GamePaths().resourcepacksDir;
+    await mkdir(dir, { recursive: true });
+    await shell.openPath(dir);
+  });
+
   ipcMain.handle(IPC.listRecommendedMods, (_event, version: string) =>
     listRecommendedMods(version),
   );
   ipcMain.handle(IPC.listRecommendedShaders, (_event, version: string) =>
     listRecommendedShaders(version),
+  );
+  ipcMain.handle(IPC.listRecommendedResourcepacks, (_event, version: string) =>
+    listRecommendedResourcepacks(version),
   );
   ipcMain.handle(
     IPC.installContent,

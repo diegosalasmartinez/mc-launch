@@ -23,7 +23,7 @@ export interface PlayResult {
   exitCode: number;
 }
 
-export type ContentType = "mod" | "shader";
+export type ContentType = "mod" | "shader" | "resourcepack";
 
 /** a curated mod/shader, enriched with live metadata from Modrinth */
 export interface RecommendedItem {
@@ -79,8 +79,10 @@ export const IPC = {
   saveSettings: "launcher:saveSettings",
   openModsFolder: "launcher:openModsFolder",
   openShadersFolder: "launcher:openShadersFolder",
+  openResourcepacksFolder: "launcher:openResourcepacksFolder",
   listRecommendedMods: "launcher:listRecommendedMods",
   listRecommendedShaders: "launcher:listRecommendedShaders",
+  listRecommendedResourcepacks: "launcher:listRecommendedResourcepacks",
   installContent: "launcher:installContent",
   listInstalled: "launcher:listInstalled",
   removeInstalled: "launcher:removeInstalled",
@@ -97,8 +99,10 @@ export interface LauncherApi {
   saveSettings(settings: Settings): Promise<void>;
   openModsFolder(version: string): Promise<void>;
   openShadersFolder(): Promise<void>;
+  openResourcepacksFolder(): Promise<void>;
   listRecommendedMods(version: string): Promise<RecommendedItem[]>;
   listRecommendedShaders(version: string): Promise<RecommendedItem[]>;
+  listRecommendedResourcepacks(version: string): Promise<RecommendedItem[]>;
   installContent(
     type: ContentType,
     slug: string,

@@ -13,9 +13,11 @@ import type { ModrinthVersion } from "../types/modrinth.js";
 
 const DOWNLOAD_CONCURRENCY = 8;
 
-// Fabric mods declare the "fabric" loader; shaderpacks declare the "iris" shader loader.
+// Fabric mods declare the "fabric" loader; shaderpacks declare the "iris" shader
+// loader; resource packs declare the "minecraft" loader.
 export const FABRIC_LOADER = "fabric";
 export const SHADER_LOADER = "iris";
+export const RESOURCEPACK_LOADER = "minecraft";
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -183,4 +185,24 @@ export async function installShader(
     throw new Error(`"${slug}" has no build for Minecraft ${mcVersion}`);
   }
   return downloadPrimaryFiles([version], paths.shaderpacksDir, onProgress);
+}
+
+// resource packs are a single .zip dropped into resourcepacks/ — no deps, no mods.
+export async function installResourcepack(
+  paths: GamePaths,
+  mcVersion: string,
+  slug: string,
+  onProgress?: (done: number, total: number) => void,
+): Promise<string[]> {
+  const version = await getCompatibleVersion(
+    slug,
+    mcVersion,
+    RESOURCEPACK_LOADER,
+  );
+  if (!version) {
+    throw new Error(
+      `"${slug}" has no resource pack build for Minecraft ${mcVersion}`,
+    );
+  }
+  return downloadPrimaryFiles([version], paths.resourcepacksDir, onProgress);
 }

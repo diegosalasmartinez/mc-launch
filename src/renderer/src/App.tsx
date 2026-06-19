@@ -9,7 +9,7 @@ import { Catalog } from "./Catalog.js";
 
 type Phase = "idle" | "preparing" | "running" | "exited" | "error";
 type NotesState = "loading" | "ready" | "none" | "error";
-type Tab = "play" | "mods" | "shaders";
+type Tab = "play" | "mods" | "shaders" | "resourcepacks";
 
 // the csp already blocks scripts; this strips script/embed tags, on* handlers,
 // and javascript: urls from the remote notes html as defense in depth before injecting it.
@@ -293,12 +293,24 @@ export function App(): JSX.Element {
         >
           Shaders
         </button>
+        <button
+          className={`tab${tab === "resourcepacks" ? " tab-active" : ""}`}
+          onClick={() => setTab("resourcepacks")}
+        >
+          Resource Packs
+        </button>
       </nav>
 
       {tab !== "play" ? (
         <section className="notes notes-tabbed">
           <Catalog
-            type={tab === "shaders" ? "shader" : "mod"}
+            type={
+              tab === "shaders"
+                ? "shader"
+                : tab === "resourcepacks"
+                  ? "resourcepack"
+                  : "mod"
+            }
             version={version}
             onInstalled={enableFabric}
           />

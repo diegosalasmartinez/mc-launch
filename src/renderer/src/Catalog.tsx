@@ -19,6 +19,7 @@ const cacheKey = (type: ContentType, version: string): string =>
 const BROWSE_URL: Record<ContentType, string> = {
   mod: "https://modrinth.com/mods",
   shader: "https://modrinth.com/shaders",
+  resourcepack: "https://modrinth.com/resourcepacks",
 };
 
 export function Catalog({
@@ -70,7 +71,9 @@ export function Catalog({
       const load =
         type === "shader"
           ? window.mcl.listRecommendedShaders(version)
-          : window.mcl.listRecommendedMods(version);
+          : type === "resourcepack"
+            ? window.mcl.listRecommendedResourcepacks(version)
+            : window.mcl.listRecommendedMods(version);
       load
         .then((list) => {
           if (stale) return;
@@ -117,7 +120,7 @@ export function Catalog({
     setBusy((s) => ({ ...s, [item.slug]: "installing" }));
     try {
       await window.mcl.installContent(item.type, item.slug, version);
-      onInstalled?.();
+      if (type !== "resourcepack") onInstalled?.();
       await refreshState();
       setBusy((s) => {
         const next = { ...s };
@@ -150,7 +153,7 @@ export function Catalog({
     setUpdating((u) => ({ ...u, [oldFileName]: true }));
     try {
       await window.mcl.updateContent(type, version, oldFileName);
-      onInstalled?.();
+      if (type !== "resourcepack") onInstalled?.();
       await refreshState();
     } catch {
       // leave it; the user can retry
@@ -173,7 +176,7 @@ export function Catalog({
       for (const target of targets) {
         await window.mcl.updateContent(type, version, target);
       }
-      onInstalled?.();
+      if (type !== "resourcepack") onInstalled?.();
       await refreshState();
     } catch {
       // partial updates still apply; refresh reflects what landed
@@ -190,7 +193,12 @@ export function Catalog({
       ? updates.find((u) => u.newFileName === item.fileName)
       : undefined;
 
-  const noun = type === "shader" ? "shaders" : "mods";
+  const noun =
+    type === "shader"
+      ? "shaders"
+      : type === "resourcepack"
+        ? "resource packs"
+        : "mods";
 
   return (
     <div className="catalog">
@@ -199,11 +207,17 @@ export function Catalog({
           These load through Fabric — we’ll switch the Fabric toggle on when you
           install one. Then just hit Play.
         </p>
-      ) : (
+      ) : type === "shader" ? (
         <p className="catalog-hint">
           Installing a shader also adds Iris &amp; Sodium to your mods (Fabric
           gets switched on). After launching, turn it on in-game via Options →
           Video Settings → Shader Packs.
+        </p>
+      ) : (
+        <p className="catalog-hint">
+          Resource packs work in vanilla too — no Fabric needed. After
+          launching, enable them via Options → Resource Packs. (Fresh Animations
+          also needs the ETF &amp; EMF mods.)
         </p>
       )}
 
@@ -283,7 +297,9 @@ export function Catalog({
           <h3 className="installed-title">
             {type === "shader"
               ? "Installed shaderpacks"
-              : `Installed for ${version}`}
+              : type === "resourcepack"
+                ? "Installed resource packs"
+                : `Installed for ${version}`}
           </h3>
           {updates.length > 0 && (
             <button
@@ -348,7 +364,7 @@ export function Catalog({
                 Play.
               </li>
             </>
-          ) : (
+          ) : type === "shader" ? (
             <>
               <li>Download the shaderpack .zip — don’t unzip it.</li>
               <li>Open your shaders folder below and drop it in.</li>
@@ -356,6 +372,12 @@ export function Catalog({
                 Launch, then enable it via Options → Video Settings → Shader
                 Packs.
               </li>
+            </>
+          ) : (
+            <>
+              <li>Download the resource pack .zip — don’t unzip it.</li>
+              <li>Open your resource packs folder below and drop it in.</li>
+              <li>Launch, then enable it via Options → Resource Packs.</li>
             </>
           )}
         </ol>
@@ -365,7 +387,9 @@ export function Catalog({
           onClick={() =>
             void (type === "shader"
               ? window.mcl.openShadersFolder()
-              : window.mcl.openModsFolder(version))
+              : type === "resourcepack"
+                ? window.mcl.openResourcepacksFolder()
+                : window.mcl.openModsFolder(version))
           }
         >
           Open {noun} folder

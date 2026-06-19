@@ -19,10 +19,14 @@ const api: LauncherApi = {
   openModsFolder: (version: string) =>
     ipcRenderer.invoke(IPC.openModsFolder, version),
   openShadersFolder: () => ipcRenderer.invoke(IPC.openShadersFolder),
+  openResourcepacksFolder: () =>
+    ipcRenderer.invoke(IPC.openResourcepacksFolder),
   listRecommendedMods: (version: string) =>
     ipcRenderer.invoke(IPC.listRecommendedMods, version),
   listRecommendedShaders: (version: string) =>
     ipcRenderer.invoke(IPC.listRecommendedShaders, version),
+  listRecommendedResourcepacks: (version: string) =>
+    ipcRenderer.invoke(IPC.listRecommendedResourcepacks, version),
   installContent: (type: ContentType, slug: string, version: string) =>
     ipcRenderer.invoke(IPC.installContent, type, slug, version),
   listInstalled: (type: ContentType, version: string) =>
