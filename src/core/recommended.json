@@ -6,12 +6,21 @@
     { "slug": "lithium", "blurb": "Game-logic optimizations, no visual change." },
     { "slug": "modmenu", "blurb": "In-game screen to browse and configure mods." },
     { "slug": "cloth-config", "blurb": "Config screens many mods rely on." },
-    { "slug": "xaeros-minimap", "blurb": "Minimap with waypoints and mob radar." }
+    { "slug": "xaeros-minimap", "blurb": "Minimap with waypoints and mob radar." },
+    { "slug": "jei", "blurb": "Searchable recipe and item lookup." },
+    { "slug": "jade", "blurb": "Shows info about whatever you're looking at." },
+    { "slug": "ferrite-core", "blurb": "Cuts memory usage, no gameplay change." },
+    { "slug": "entitytexturefeatures", "blurb": "Animated entity textures (needed by Fresh Animations)." },
+    { "slug": "entity-model-features", "blurb": "Custom entity models (needed by Fresh Animations)." }
   ],
   "shaders": [
     { "slug": "complementary-reimagined", "blurb": "Crisp, balanced, great default." },
     { "slug": "complementary-shaders", "blurb": "Popular, well-rounded shaderpack." },
     { "slug": "bsl-shaders", "blurb": "Bright and colorful, beginner-friendly." },
     { "slug": "sildurs-vibrant-shaders", "blurb": "Highly configurable classic look." }
+  ],
+  "resourcepacks": [
+    { "slug": "fresh-animations", "blurb": "Lively mob animations (needs ETF + EMF mods)." },
+    { "slug": "3d-crops", "blurb": "Crops and plants rendered in 3D." }
   ]
 }
