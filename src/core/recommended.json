@@ -11,7 +11,8 @@
     { "slug": "jade", "blurb": "Shows info about whatever you're looking at." },
     { "slug": "ferrite-core", "blurb": "Cuts memory usage, no gameplay change." },
     { "slug": "entitytexturefeatures", "blurb": "Animated entity textures (needed by Fresh Animations)." },
-    { "slug": "entity-model-features", "blurb": "Custom entity models (needed by Fresh Animations)." }
+    { "slug": "entity-model-features", "blurb": "Custom entity models (needed by Fresh Animations)." },
+    { "slug": "worldedit", "blurb": "In-game world editing — build and sculpt fast." }
   ],
   "shaders": [
     { "slug": "complementary-reimagined", "blurb": "Crisp, balanced, great default." },
